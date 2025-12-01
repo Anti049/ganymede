@@ -14,6 +14,7 @@ import (
 	"github.com/zibbp/ganymede/ent/channel"
 	"github.com/zibbp/ganymede/ent/queue"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 	"github.com/zibbp/ganymede/internal/utils"
 )
 
@@ -129,9 +130,11 @@ type VodEdges struct {
 	MutedSegments []*MutedSegment `json:"muted_segments,omitempty"`
 	// MultistreamInfo holds the value of the multistream_info edge.
 	MultistreamInfo []*MultistreamInfo `json:"multistream_info,omitempty"`
+	// YoutubeUpload holds the value of the youtube_upload edge.
+	YoutubeUpload *YoutubeUpload `json:"youtube_upload,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // ChannelOrErr returns the Channel value or an error if the edge
@@ -190,6 +193,17 @@ func (e VodEdges) MultistreamInfoOrErr() ([]*MultistreamInfo, error) {
 		return e.MultistreamInfo, nil
 	}
 	return nil, &NotLoadedError{edge: "multistream_info"}
+}
+
+// YoutubeUploadOrErr returns the YoutubeUpload value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e VodEdges) YoutubeUploadOrErr() (*YoutubeUpload, error) {
+	if e.YoutubeUpload != nil {
+		return e.YoutubeUpload, nil
+	} else if e.loadedTypes[6] {
+		return nil, &NotFoundError{label: youtubeupload.Label}
+	}
+	return nil, &NotLoadedError{edge: "youtube_upload"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -540,6 +554,11 @@ func (_m *Vod) QueryMutedSegments() *MutedSegmentQuery {
 // QueryMultistreamInfo queries the "multistream_info" edge of the Vod entity.
 func (_m *Vod) QueryMultistreamInfo() *MultistreamInfoQuery {
 	return NewVodClient(_m.config).QueryMultistreamInfo(_m)
+}
+
+// QueryYoutubeUpload queries the "youtube_upload" edge of the Vod entity.
+func (_m *Vod) QueryYoutubeUpload() *YoutubeUploadQuery {
+	return NewVodClient(_m.config).QueryYoutubeUpload(_m)
 }
 
 // Update returns a builder for updating this Vod.

@@ -213,6 +213,54 @@ func (f VodFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VodMutation", m)
 }
 
+// The YoutubeConfigFunc type is an adapter to allow the use of ordinary
+// function as YoutubeConfig mutator.
+type YoutubeConfigFunc func(context.Context, *ent.YoutubeConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f YoutubeConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.YoutubeConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.YoutubeConfigMutation", m)
+}
+
+// The YoutubeCredentialFunc type is an adapter to allow the use of ordinary
+// function as YoutubeCredential mutator.
+type YoutubeCredentialFunc func(context.Context, *ent.YoutubeCredentialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f YoutubeCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.YoutubeCredentialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.YoutubeCredentialMutation", m)
+}
+
+// The YoutubePlaylistMappingFunc type is an adapter to allow the use of ordinary
+// function as YoutubePlaylistMapping mutator.
+type YoutubePlaylistMappingFunc func(context.Context, *ent.YoutubePlaylistMappingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f YoutubePlaylistMappingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.YoutubePlaylistMappingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.YoutubePlaylistMappingMutation", m)
+}
+
+// The YoutubeUploadFunc type is an adapter to allow the use of ordinary
+// function as YoutubeUpload mutator.
+type YoutubeUploadFunc func(context.Context, *ent.YoutubeUploadMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f YoutubeUploadFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.YoutubeUploadMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.YoutubeUploadMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

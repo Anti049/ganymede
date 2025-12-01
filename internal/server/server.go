@@ -31,6 +31,7 @@ import (
 	transportHttp "github.com/zibbp/ganymede/internal/transport/http"
 	"github.com/zibbp/ganymede/internal/user"
 	"github.com/zibbp/ganymede/internal/vod"
+	"github.com/zibbp/ganymede/internal/youtube"
 	"riverqueue.com/riverui"
 )
 
@@ -54,6 +55,7 @@ type Application struct {
 	ChapterService    *chapter.Service
 	CategoryService   *category.Service
 	BlockedVodService *blocked.Service
+	YoutubeService    *youtube.Service
 	RiverUIServer     *riverui.Handler
 	RiverClient       *tasks_client.RiverClient
 }
@@ -155,6 +157,7 @@ func SetupApplication(ctx context.Context) (*Application, error) {
 	playlistService := playlist.NewService(db)
 	taskService := task.NewService(db, liveService, riverClient)
 	categoryService := category.NewService(db)
+	youtubeService := youtube.NewService(db)
 
 	return &Application{
 		EnvConfig:         envConfig,
@@ -174,6 +177,7 @@ func SetupApplication(ctx context.Context) (*Application, error) {
 		TaskService:       taskService,
 		ChapterService:    chapterService,
 		CategoryService:   categoryService,
+		YoutubeService:    youtubeService,
 		PlatformTwitch:    platformTwitch,
 		RiverUIServer:     riverUIServer,
 		RiverClient:       riverClient,
@@ -187,7 +191,7 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	httpHandler := transportHttp.NewHandler(app.Database, app.AuthService, app.ChannelService, app.VodService, app.QueueService, app.ArchiveService, app.AdminService, app.UserService, app.LiveService, app.PlaybackService, app.MetricsService, app.PlaylistService, app.TaskService, app.ChapterService, app.CategoryService, app.BlockedVodService, app.PlatformTwitch, app.RiverUIServer)
+	httpHandler := transportHttp.NewHandler(app.Database, app.AuthService, app.ChannelService, app.VodService, app.QueueService, app.ArchiveService, app.AdminService, app.UserService, app.LiveService, app.PlaybackService, app.MetricsService, app.PlaylistService, app.TaskService, app.ChapterService, app.CategoryService, app.BlockedVodService, app.YoutubeService, app.PlatformTwitch, app.RiverUIServer)
 
 	if err := httpHandler.Serve(ctx); err != nil {
 		return err

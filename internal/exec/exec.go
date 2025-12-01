@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/grafov/m3u8"
@@ -125,9 +124,7 @@ func DownloadTwitchVideo(ctx context.Context, video ent.Vod) error {
 	cmd.Stderr = file
 	cmd.Stdout = file
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true, // Set the process group ID to allow killing child processes
-	}
+	setupProcessGroup(cmd)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("error starting yt-dlp: %w", err)
 	}
@@ -265,9 +262,7 @@ func DownloadTwitchLiveVideo(ctx context.Context, video ent.Vod, channel ent.Cha
 	// forcibly killed by CommandContext. We'll manage graceful shutdown
 	// ourselves (SIGTERM -> wait -> SIGKILL).
 	cmd := osExec.Command("ffmpeg", ffmpegArgs...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
+	setupProcessGroup(cmd)
 
 	log.Debug().Str("channel", channel.Name).Str("cmd", strings.Join(cmd.Args, " ")).Msgf("running ffmpeg")
 
@@ -292,7 +287,7 @@ func DownloadTwitchLiveVideo(ctx context.Context, video ent.Vod, channel ent.Cha
 	select {
 	case <-ctx.Done():
 		if cmd.Process != nil {
-			err = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+			err = killProcessGroup(cmd.Process.Pid)
 			if err != nil {
 				log.Error().Err(err).Msg("failed to send SIGTERM to ffmpeg process")
 			}
@@ -302,7 +297,7 @@ func DownloadTwitchLiveVideo(ctx context.Context, video ent.Vod, channel ent.Cha
 			// exited after SIGTERM
 		case <-time.After(sigtermTimeout):
 			if cmd.Process != nil {
-				err = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				err = killProcessGroupForce(cmd.Process.Pid)
 				if err != nil {
 					log.Error().Err(err).Msg("failed to send SIGKILL to ffmpeg process")
 				}

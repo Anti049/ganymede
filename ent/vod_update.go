@@ -21,6 +21,7 @@ import (
 	"github.com/zibbp/ganymede/ent/predicate"
 	"github.com/zibbp/ganymede/ent/queue"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 	"github.com/zibbp/ganymede/internal/utils"
 )
 
@@ -937,6 +938,25 @@ func (_u *VodUpdate) AddMultistreamInfo(v ...*MultistreamInfo) *VodUpdate {
 	return _u.AddMultistreamInfoIDs(ids...)
 }
 
+// SetYoutubeUploadID sets the "youtube_upload" edge to the YoutubeUpload entity by ID.
+func (_u *VodUpdate) SetYoutubeUploadID(id uuid.UUID) *VodUpdate {
+	_u.mutation.SetYoutubeUploadID(id)
+	return _u
+}
+
+// SetNillableYoutubeUploadID sets the "youtube_upload" edge to the YoutubeUpload entity by ID if the given value is not nil.
+func (_u *VodUpdate) SetNillableYoutubeUploadID(id *uuid.UUID) *VodUpdate {
+	if id != nil {
+		_u = _u.SetYoutubeUploadID(*id)
+	}
+	return _u
+}
+
+// SetYoutubeUpload sets the "youtube_upload" edge to the YoutubeUpload entity.
+func (_u *VodUpdate) SetYoutubeUpload(v *YoutubeUpload) *VodUpdate {
+	return _u.SetYoutubeUploadID(v.ID)
+}
+
 // Mutation returns the VodMutation object of the builder.
 func (_u *VodUpdate) Mutation() *VodMutation {
 	return _u.mutation
@@ -1036,6 +1056,12 @@ func (_u *VodUpdate) RemoveMultistreamInfo(v ...*MultistreamInfo) *VodUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMultistreamInfoIDs(ids...)
+}
+
+// ClearYoutubeUpload clears the "youtube_upload" edge to the YoutubeUpload entity.
+func (_u *VodUpdate) ClearYoutubeUpload() *VodUpdate {
+	_u.mutation.ClearYoutubeUpload()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1577,6 +1603,35 @@ func (_u *VodUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(multistreaminfo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.YoutubeUploadCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   vod.YoutubeUploadTable,
+			Columns: []string{vod.YoutubeUploadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeupload.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.YoutubeUploadIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   vod.YoutubeUploadTable,
+			Columns: []string{vod.YoutubeUploadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeupload.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -2504,6 +2559,25 @@ func (_u *VodUpdateOne) AddMultistreamInfo(v ...*MultistreamInfo) *VodUpdateOne 
 	return _u.AddMultistreamInfoIDs(ids...)
 }
 
+// SetYoutubeUploadID sets the "youtube_upload" edge to the YoutubeUpload entity by ID.
+func (_u *VodUpdateOne) SetYoutubeUploadID(id uuid.UUID) *VodUpdateOne {
+	_u.mutation.SetYoutubeUploadID(id)
+	return _u
+}
+
+// SetNillableYoutubeUploadID sets the "youtube_upload" edge to the YoutubeUpload entity by ID if the given value is not nil.
+func (_u *VodUpdateOne) SetNillableYoutubeUploadID(id *uuid.UUID) *VodUpdateOne {
+	if id != nil {
+		_u = _u.SetYoutubeUploadID(*id)
+	}
+	return _u
+}
+
+// SetYoutubeUpload sets the "youtube_upload" edge to the YoutubeUpload entity.
+func (_u *VodUpdateOne) SetYoutubeUpload(v *YoutubeUpload) *VodUpdateOne {
+	return _u.SetYoutubeUploadID(v.ID)
+}
+
 // Mutation returns the VodMutation object of the builder.
 func (_u *VodUpdateOne) Mutation() *VodMutation {
 	return _u.mutation
@@ -2603,6 +2677,12 @@ func (_u *VodUpdateOne) RemoveMultistreamInfo(v ...*MultistreamInfo) *VodUpdateO
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMultistreamInfoIDs(ids...)
+}
+
+// ClearYoutubeUpload clears the "youtube_upload" edge to the YoutubeUpload entity.
+func (_u *VodUpdateOne) ClearYoutubeUpload() *VodUpdateOne {
+	_u.mutation.ClearYoutubeUpload()
+	return _u
 }
 
 // Where appends a list predicates to the VodUpdate builder.
@@ -3174,6 +3254,35 @@ func (_u *VodUpdateOne) sqlSave(ctx context.Context) (_node *Vod, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(multistreaminfo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.YoutubeUploadCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   vod.YoutubeUploadTable,
+			Columns: []string{vod.YoutubeUploadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeupload.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.YoutubeUploadIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   vod.YoutubeUploadTable,
+			Columns: []string{vod.YoutubeUploadColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeupload.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

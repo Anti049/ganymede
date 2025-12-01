@@ -30,6 +30,10 @@ import (
 	"github.com/zibbp/ganymede/ent/twitchcategory"
 	"github.com/zibbp/ganymede/ent/user"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
+	"github.com/zibbp/ganymede/ent/youtubecredential"
+	"github.com/zibbp/ganymede/ent/youtubeplaylistmapping"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 	"github.com/zibbp/ganymede/internal/utils"
 )
 
@@ -42,23 +46,27 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBlockedVideos     = "BlockedVideos"
-	TypeChannel           = "Channel"
-	TypeChapter           = "Chapter"
-	TypeLive              = "Live"
-	TypeLiveCategory      = "LiveCategory"
-	TypeLiveTitleRegex    = "LiveTitleRegex"
-	TypeMultistreamInfo   = "MultistreamInfo"
-	TypeMutedSegment      = "MutedSegment"
-	TypePlayback          = "Playback"
-	TypePlaylist          = "Playlist"
-	TypePlaylistRule      = "PlaylistRule"
-	TypePlaylistRuleGroup = "PlaylistRuleGroup"
-	TypeQueue             = "Queue"
-	TypeSessions          = "Sessions"
-	TypeTwitchCategory    = "TwitchCategory"
-	TypeUser              = "User"
-	TypeVod               = "Vod"
+	TypeBlockedVideos          = "BlockedVideos"
+	TypeChannel                = "Channel"
+	TypeChapter                = "Chapter"
+	TypeLive                   = "Live"
+	TypeLiveCategory           = "LiveCategory"
+	TypeLiveTitleRegex         = "LiveTitleRegex"
+	TypeMultistreamInfo        = "MultistreamInfo"
+	TypeMutedSegment           = "MutedSegment"
+	TypePlayback               = "Playback"
+	TypePlaylist               = "Playlist"
+	TypePlaylistRule           = "PlaylistRule"
+	TypePlaylistRuleGroup      = "PlaylistRuleGroup"
+	TypeQueue                  = "Queue"
+	TypeSessions               = "Sessions"
+	TypeTwitchCategory         = "TwitchCategory"
+	TypeUser                   = "User"
+	TypeVod                    = "Vod"
+	TypeYoutubeConfig          = "YoutubeConfig"
+	TypeYoutubeCredential      = "YoutubeCredential"
+	TypeYoutubePlaylistMapping = "YoutubePlaylistMapping"
+	TypeYoutubeUpload          = "YoutubeUpload"
 )
 
 // BlockedVideosMutation represents an operation that mutates the BlockedVideos nodes in the graph.
@@ -417,6 +425,8 @@ type ChannelMutation struct {
 	live                  map[uuid.UUID]struct{}
 	removedlive           map[uuid.UUID]struct{}
 	clearedlive           bool
+	youtube_config        *uuid.UUID
+	clearedyoutube_config bool
 	done                  bool
 	oldValue              func(context.Context) (*Channel, error)
 	predicates            []predicate.Channel
@@ -1025,6 +1035,45 @@ func (m *ChannelMutation) ResetLive() {
 	m.removedlive = nil
 }
 
+// SetYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by id.
+func (m *ChannelMutation) SetYoutubeConfigID(id uuid.UUID) {
+	m.youtube_config = &id
+}
+
+// ClearYoutubeConfig clears the "youtube_config" edge to the YoutubeConfig entity.
+func (m *ChannelMutation) ClearYoutubeConfig() {
+	m.clearedyoutube_config = true
+}
+
+// YoutubeConfigCleared reports if the "youtube_config" edge to the YoutubeConfig entity was cleared.
+func (m *ChannelMutation) YoutubeConfigCleared() bool {
+	return m.clearedyoutube_config
+}
+
+// YoutubeConfigID returns the "youtube_config" edge ID in the mutation.
+func (m *ChannelMutation) YoutubeConfigID() (id uuid.UUID, exists bool) {
+	if m.youtube_config != nil {
+		return *m.youtube_config, true
+	}
+	return
+}
+
+// YoutubeConfigIDs returns the "youtube_config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YoutubeConfigID instead. It exists only for internal usage by the builders.
+func (m *ChannelMutation) YoutubeConfigIDs() (ids []uuid.UUID) {
+	if id := m.youtube_config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYoutubeConfig resets all changes to the "youtube_config" edge.
+func (m *ChannelMutation) ResetYoutubeConfig() {
+	m.youtube_config = nil
+	m.clearedyoutube_config = false
+}
+
 // Where appends a list predicates to the ChannelMutation builder.
 func (m *ChannelMutation) Where(ps ...predicate.Channel) {
 	m.predicates = append(m.predicates, ps...)
@@ -1336,12 +1385,15 @@ func (m *ChannelMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChannelMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.vods != nil {
 		edges = append(edges, channel.EdgeVods)
 	}
 	if m.live != nil {
 		edges = append(edges, channel.EdgeLive)
+	}
+	if m.youtube_config != nil {
+		edges = append(edges, channel.EdgeYoutubeConfig)
 	}
 	return edges
 }
@@ -1362,13 +1414,17 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeYoutubeConfig:
+		if id := m.youtube_config; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChannelMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedvods != nil {
 		edges = append(edges, channel.EdgeVods)
 	}
@@ -1400,12 +1456,15 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChannelMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedvods {
 		edges = append(edges, channel.EdgeVods)
 	}
 	if m.clearedlive {
 		edges = append(edges, channel.EdgeLive)
+	}
+	if m.clearedyoutube_config {
+		edges = append(edges, channel.EdgeYoutubeConfig)
 	}
 	return edges
 }
@@ -1418,6 +1477,8 @@ func (m *ChannelMutation) EdgeCleared(name string) bool {
 		return m.clearedvods
 	case channel.EdgeLive:
 		return m.clearedlive
+	case channel.EdgeYoutubeConfig:
+		return m.clearedyoutube_config
 	}
 	return false
 }
@@ -1426,6 +1487,9 @@ func (m *ChannelMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *ChannelMutation) ClearEdge(name string) error {
 	switch name {
+	case channel.EdgeYoutubeConfig:
+		m.ClearYoutubeConfig()
+		return nil
 	}
 	return fmt.Errorf("unknown Channel unique edge %s", name)
 }
@@ -1439,6 +1503,9 @@ func (m *ChannelMutation) ResetEdge(name string) error {
 		return nil
 	case channel.EdgeLive:
 		m.ResetLive()
+		return nil
+	case channel.EdgeYoutubeConfig:
+		m.ResetYoutubeConfig()
 		return nil
 	}
 	return fmt.Errorf("unknown Channel edge %s", name)
@@ -12547,6 +12614,8 @@ type VodMutation struct {
 	multistream_info               map[int]struct{}
 	removedmultistream_info        map[int]struct{}
 	clearedmultistream_info        bool
+	youtube_upload                 *uuid.UUID
+	clearedyoutube_upload          bool
 	done                           bool
 	oldValue                       func(context.Context) (*Vod, error)
 	predicates                     []predicate.Vod
@@ -15071,6 +15140,45 @@ func (m *VodMutation) ResetMultistreamInfo() {
 	m.removedmultistream_info = nil
 }
 
+// SetYoutubeUploadID sets the "youtube_upload" edge to the YoutubeUpload entity by id.
+func (m *VodMutation) SetYoutubeUploadID(id uuid.UUID) {
+	m.youtube_upload = &id
+}
+
+// ClearYoutubeUpload clears the "youtube_upload" edge to the YoutubeUpload entity.
+func (m *VodMutation) ClearYoutubeUpload() {
+	m.clearedyoutube_upload = true
+}
+
+// YoutubeUploadCleared reports if the "youtube_upload" edge to the YoutubeUpload entity was cleared.
+func (m *VodMutation) YoutubeUploadCleared() bool {
+	return m.clearedyoutube_upload
+}
+
+// YoutubeUploadID returns the "youtube_upload" edge ID in the mutation.
+func (m *VodMutation) YoutubeUploadID() (id uuid.UUID, exists bool) {
+	if m.youtube_upload != nil {
+		return *m.youtube_upload, true
+	}
+	return
+}
+
+// YoutubeUploadIDs returns the "youtube_upload" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YoutubeUploadID instead. It exists only for internal usage by the builders.
+func (m *VodMutation) YoutubeUploadIDs() (ids []uuid.UUID) {
+	if id := m.youtube_upload; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYoutubeUpload resets all changes to the "youtube_upload" edge.
+func (m *VodMutation) ResetYoutubeUpload() {
+	m.youtube_upload = nil
+	m.clearedyoutube_upload = false
+}
+
 // Where appends a list predicates to the VodMutation builder.
 func (m *VodMutation) Where(ps ...predicate.Vod) {
 	m.predicates = append(m.predicates, ps...)
@@ -16206,7 +16314,7 @@ func (m *VodMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *VodMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.channel != nil {
 		edges = append(edges, vod.EdgeChannel)
 	}
@@ -16224,6 +16332,9 @@ func (m *VodMutation) AddedEdges() []string {
 	}
 	if m.multistream_info != nil {
 		edges = append(edges, vod.EdgeMultistreamInfo)
+	}
+	if m.youtube_upload != nil {
+		edges = append(edges, vod.EdgeYoutubeUpload)
 	}
 	return edges
 }
@@ -16264,13 +16375,17 @@ func (m *VodMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case vod.EdgeYoutubeUpload:
+		if id := m.youtube_upload; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *VodMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedplaylists != nil {
 		edges = append(edges, vod.EdgePlaylists)
 	}
@@ -16320,7 +16435,7 @@ func (m *VodMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *VodMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedchannel {
 		edges = append(edges, vod.EdgeChannel)
 	}
@@ -16338,6 +16453,9 @@ func (m *VodMutation) ClearedEdges() []string {
 	}
 	if m.clearedmultistream_info {
 		edges = append(edges, vod.EdgeMultistreamInfo)
+	}
+	if m.clearedyoutube_upload {
+		edges = append(edges, vod.EdgeYoutubeUpload)
 	}
 	return edges
 }
@@ -16358,6 +16476,8 @@ func (m *VodMutation) EdgeCleared(name string) bool {
 		return m.clearedmuted_segments
 	case vod.EdgeMultistreamInfo:
 		return m.clearedmultistream_info
+	case vod.EdgeYoutubeUpload:
+		return m.clearedyoutube_upload
 	}
 	return false
 }
@@ -16371,6 +16491,9 @@ func (m *VodMutation) ClearEdge(name string) error {
 		return nil
 	case vod.EdgeQueue:
 		m.ClearQueue()
+		return nil
+	case vod.EdgeYoutubeUpload:
+		m.ClearYoutubeUpload()
 		return nil
 	}
 	return fmt.Errorf("unknown Vod unique edge %s", name)
@@ -16398,6 +16521,3367 @@ func (m *VodMutation) ResetEdge(name string) error {
 	case vod.EdgeMultistreamInfo:
 		m.ResetMultistreamInfo()
 		return nil
+	case vod.EdgeYoutubeUpload:
+		m.ResetYoutubeUpload()
+		return nil
 	}
 	return fmt.Errorf("unknown Vod edge %s", name)
+}
+
+// YoutubeConfigMutation represents an operation that mutates the YoutubeConfig nodes in the graph.
+type YoutubeConfigMutation struct {
+	config
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	upload_enabled           *bool
+	default_privacy          *string
+	default_category_id      *string
+	description_template     *string
+	title_template           *string
+	tags                     *[]string
+	appendtags               []string
+	add_chapters             *bool
+	notify_subscribers       *bool
+	updated_at               *time.Time
+	created_at               *time.Time
+	clearedFields            map[string]struct{}
+	channel                  *uuid.UUID
+	clearedchannel           bool
+	playlist_mappings        map[uuid.UUID]struct{}
+	removedplaylist_mappings map[uuid.UUID]struct{}
+	clearedplaylist_mappings bool
+	done                     bool
+	oldValue                 func(context.Context) (*YoutubeConfig, error)
+	predicates               []predicate.YoutubeConfig
+}
+
+var _ ent.Mutation = (*YoutubeConfigMutation)(nil)
+
+// youtubeconfigOption allows management of the mutation configuration using functional options.
+type youtubeconfigOption func(*YoutubeConfigMutation)
+
+// newYoutubeConfigMutation creates new mutation for the YoutubeConfig entity.
+func newYoutubeConfigMutation(c config, op Op, opts ...youtubeconfigOption) *YoutubeConfigMutation {
+	m := &YoutubeConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeYoutubeConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withYoutubeConfigID sets the ID field of the mutation.
+func withYoutubeConfigID(id uuid.UUID) youtubeconfigOption {
+	return func(m *YoutubeConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *YoutubeConfig
+		)
+		m.oldValue = func(ctx context.Context) (*YoutubeConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().YoutubeConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withYoutubeConfig sets the old YoutubeConfig of the mutation.
+func withYoutubeConfig(node *YoutubeConfig) youtubeconfigOption {
+	return func(m *YoutubeConfigMutation) {
+		m.oldValue = func(context.Context) (*YoutubeConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m YoutubeConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m YoutubeConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of YoutubeConfig entities.
+func (m *YoutubeConfigMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *YoutubeConfigMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *YoutubeConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().YoutubeConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUploadEnabled sets the "upload_enabled" field.
+func (m *YoutubeConfigMutation) SetUploadEnabled(b bool) {
+	m.upload_enabled = &b
+}
+
+// UploadEnabled returns the value of the "upload_enabled" field in the mutation.
+func (m *YoutubeConfigMutation) UploadEnabled() (r bool, exists bool) {
+	v := m.upload_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUploadEnabled returns the old "upload_enabled" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldUploadEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUploadEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUploadEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUploadEnabled: %w", err)
+	}
+	return oldValue.UploadEnabled, nil
+}
+
+// ResetUploadEnabled resets all changes to the "upload_enabled" field.
+func (m *YoutubeConfigMutation) ResetUploadEnabled() {
+	m.upload_enabled = nil
+}
+
+// SetDefaultPrivacy sets the "default_privacy" field.
+func (m *YoutubeConfigMutation) SetDefaultPrivacy(s string) {
+	m.default_privacy = &s
+}
+
+// DefaultPrivacy returns the value of the "default_privacy" field in the mutation.
+func (m *YoutubeConfigMutation) DefaultPrivacy() (r string, exists bool) {
+	v := m.default_privacy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultPrivacy returns the old "default_privacy" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldDefaultPrivacy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultPrivacy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultPrivacy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultPrivacy: %w", err)
+	}
+	return oldValue.DefaultPrivacy, nil
+}
+
+// ResetDefaultPrivacy resets all changes to the "default_privacy" field.
+func (m *YoutubeConfigMutation) ResetDefaultPrivacy() {
+	m.default_privacy = nil
+}
+
+// SetDefaultCategoryID sets the "default_category_id" field.
+func (m *YoutubeConfigMutation) SetDefaultCategoryID(s string) {
+	m.default_category_id = &s
+}
+
+// DefaultCategoryID returns the value of the "default_category_id" field in the mutation.
+func (m *YoutubeConfigMutation) DefaultCategoryID() (r string, exists bool) {
+	v := m.default_category_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultCategoryID returns the old "default_category_id" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldDefaultCategoryID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultCategoryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultCategoryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultCategoryID: %w", err)
+	}
+	return oldValue.DefaultCategoryID, nil
+}
+
+// ResetDefaultCategoryID resets all changes to the "default_category_id" field.
+func (m *YoutubeConfigMutation) ResetDefaultCategoryID() {
+	m.default_category_id = nil
+}
+
+// SetDescriptionTemplate sets the "description_template" field.
+func (m *YoutubeConfigMutation) SetDescriptionTemplate(s string) {
+	m.description_template = &s
+}
+
+// DescriptionTemplate returns the value of the "description_template" field in the mutation.
+func (m *YoutubeConfigMutation) DescriptionTemplate() (r string, exists bool) {
+	v := m.description_template
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescriptionTemplate returns the old "description_template" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldDescriptionTemplate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescriptionTemplate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescriptionTemplate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescriptionTemplate: %w", err)
+	}
+	return oldValue.DescriptionTemplate, nil
+}
+
+// ClearDescriptionTemplate clears the value of the "description_template" field.
+func (m *YoutubeConfigMutation) ClearDescriptionTemplate() {
+	m.description_template = nil
+	m.clearedFields[youtubeconfig.FieldDescriptionTemplate] = struct{}{}
+}
+
+// DescriptionTemplateCleared returns if the "description_template" field was cleared in this mutation.
+func (m *YoutubeConfigMutation) DescriptionTemplateCleared() bool {
+	_, ok := m.clearedFields[youtubeconfig.FieldDescriptionTemplate]
+	return ok
+}
+
+// ResetDescriptionTemplate resets all changes to the "description_template" field.
+func (m *YoutubeConfigMutation) ResetDescriptionTemplate() {
+	m.description_template = nil
+	delete(m.clearedFields, youtubeconfig.FieldDescriptionTemplate)
+}
+
+// SetTitleTemplate sets the "title_template" field.
+func (m *YoutubeConfigMutation) SetTitleTemplate(s string) {
+	m.title_template = &s
+}
+
+// TitleTemplate returns the value of the "title_template" field in the mutation.
+func (m *YoutubeConfigMutation) TitleTemplate() (r string, exists bool) {
+	v := m.title_template
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitleTemplate returns the old "title_template" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldTitleTemplate(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitleTemplate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitleTemplate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitleTemplate: %w", err)
+	}
+	return oldValue.TitleTemplate, nil
+}
+
+// ClearTitleTemplate clears the value of the "title_template" field.
+func (m *YoutubeConfigMutation) ClearTitleTemplate() {
+	m.title_template = nil
+	m.clearedFields[youtubeconfig.FieldTitleTemplate] = struct{}{}
+}
+
+// TitleTemplateCleared returns if the "title_template" field was cleared in this mutation.
+func (m *YoutubeConfigMutation) TitleTemplateCleared() bool {
+	_, ok := m.clearedFields[youtubeconfig.FieldTitleTemplate]
+	return ok
+}
+
+// ResetTitleTemplate resets all changes to the "title_template" field.
+func (m *YoutubeConfigMutation) ResetTitleTemplate() {
+	m.title_template = nil
+	delete(m.clearedFields, youtubeconfig.FieldTitleTemplate)
+}
+
+// SetTags sets the "tags" field.
+func (m *YoutubeConfigMutation) SetTags(s []string) {
+	m.tags = &s
+	m.appendtags = nil
+}
+
+// Tags returns the value of the "tags" field in the mutation.
+func (m *YoutubeConfigMutation) Tags() (r []string, exists bool) {
+	v := m.tags
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTags returns the old "tags" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldTags(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTags is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTags requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTags: %w", err)
+	}
+	return oldValue.Tags, nil
+}
+
+// AppendTags adds s to the "tags" field.
+func (m *YoutubeConfigMutation) AppendTags(s []string) {
+	m.appendtags = append(m.appendtags, s...)
+}
+
+// AppendedTags returns the list of values that were appended to the "tags" field in this mutation.
+func (m *YoutubeConfigMutation) AppendedTags() ([]string, bool) {
+	if len(m.appendtags) == 0 {
+		return nil, false
+	}
+	return m.appendtags, true
+}
+
+// ClearTags clears the value of the "tags" field.
+func (m *YoutubeConfigMutation) ClearTags() {
+	m.tags = nil
+	m.appendtags = nil
+	m.clearedFields[youtubeconfig.FieldTags] = struct{}{}
+}
+
+// TagsCleared returns if the "tags" field was cleared in this mutation.
+func (m *YoutubeConfigMutation) TagsCleared() bool {
+	_, ok := m.clearedFields[youtubeconfig.FieldTags]
+	return ok
+}
+
+// ResetTags resets all changes to the "tags" field.
+func (m *YoutubeConfigMutation) ResetTags() {
+	m.tags = nil
+	m.appendtags = nil
+	delete(m.clearedFields, youtubeconfig.FieldTags)
+}
+
+// SetAddChapters sets the "add_chapters" field.
+func (m *YoutubeConfigMutation) SetAddChapters(b bool) {
+	m.add_chapters = &b
+}
+
+// AddChapters returns the value of the "add_chapters" field in the mutation.
+func (m *YoutubeConfigMutation) AddChapters() (r bool, exists bool) {
+	v := m.add_chapters
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddChapters returns the old "add_chapters" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldAddChapters(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddChapters is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddChapters requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddChapters: %w", err)
+	}
+	return oldValue.AddChapters, nil
+}
+
+// ResetAddChapters resets all changes to the "add_chapters" field.
+func (m *YoutubeConfigMutation) ResetAddChapters() {
+	m.add_chapters = nil
+}
+
+// SetNotifySubscribers sets the "notify_subscribers" field.
+func (m *YoutubeConfigMutation) SetNotifySubscribers(b bool) {
+	m.notify_subscribers = &b
+}
+
+// NotifySubscribers returns the value of the "notify_subscribers" field in the mutation.
+func (m *YoutubeConfigMutation) NotifySubscribers() (r bool, exists bool) {
+	v := m.notify_subscribers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotifySubscribers returns the old "notify_subscribers" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldNotifySubscribers(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotifySubscribers is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotifySubscribers requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotifySubscribers: %w", err)
+	}
+	return oldValue.NotifySubscribers, nil
+}
+
+// ResetNotifySubscribers resets all changes to the "notify_subscribers" field.
+func (m *YoutubeConfigMutation) ResetNotifySubscribers() {
+	m.notify_subscribers = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *YoutubeConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *YoutubeConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *YoutubeConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *YoutubeConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *YoutubeConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the YoutubeConfig entity.
+// If the YoutubeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *YoutubeConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetChannelID sets the "channel" edge to the Channel entity by id.
+func (m *YoutubeConfigMutation) SetChannelID(id uuid.UUID) {
+	m.channel = &id
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *YoutubeConfigMutation) ClearChannel() {
+	m.clearedchannel = true
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *YoutubeConfigMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelID returns the "channel" edge ID in the mutation.
+func (m *YoutubeConfigMutation) ChannelID() (id uuid.UUID, exists bool) {
+	if m.channel != nil {
+		return *m.channel, true
+	}
+	return
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *YoutubeConfigMutation) ChannelIDs() (ids []uuid.UUID) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *YoutubeConfigMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
+}
+
+// AddPlaylistMappingIDs adds the "playlist_mappings" edge to the YoutubePlaylistMapping entity by ids.
+func (m *YoutubeConfigMutation) AddPlaylistMappingIDs(ids ...uuid.UUID) {
+	if m.playlist_mappings == nil {
+		m.playlist_mappings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.playlist_mappings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPlaylistMappings clears the "playlist_mappings" edge to the YoutubePlaylistMapping entity.
+func (m *YoutubeConfigMutation) ClearPlaylistMappings() {
+	m.clearedplaylist_mappings = true
+}
+
+// PlaylistMappingsCleared reports if the "playlist_mappings" edge to the YoutubePlaylistMapping entity was cleared.
+func (m *YoutubeConfigMutation) PlaylistMappingsCleared() bool {
+	return m.clearedplaylist_mappings
+}
+
+// RemovePlaylistMappingIDs removes the "playlist_mappings" edge to the YoutubePlaylistMapping entity by IDs.
+func (m *YoutubeConfigMutation) RemovePlaylistMappingIDs(ids ...uuid.UUID) {
+	if m.removedplaylist_mappings == nil {
+		m.removedplaylist_mappings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.playlist_mappings, ids[i])
+		m.removedplaylist_mappings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPlaylistMappings returns the removed IDs of the "playlist_mappings" edge to the YoutubePlaylistMapping entity.
+func (m *YoutubeConfigMutation) RemovedPlaylistMappingsIDs() (ids []uuid.UUID) {
+	for id := range m.removedplaylist_mappings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PlaylistMappingsIDs returns the "playlist_mappings" edge IDs in the mutation.
+func (m *YoutubeConfigMutation) PlaylistMappingsIDs() (ids []uuid.UUID) {
+	for id := range m.playlist_mappings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPlaylistMappings resets all changes to the "playlist_mappings" edge.
+func (m *YoutubeConfigMutation) ResetPlaylistMappings() {
+	m.playlist_mappings = nil
+	m.clearedplaylist_mappings = false
+	m.removedplaylist_mappings = nil
+}
+
+// Where appends a list predicates to the YoutubeConfigMutation builder.
+func (m *YoutubeConfigMutation) Where(ps ...predicate.YoutubeConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the YoutubeConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *YoutubeConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.YoutubeConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *YoutubeConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *YoutubeConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (YoutubeConfig).
+func (m *YoutubeConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *YoutubeConfigMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.upload_enabled != nil {
+		fields = append(fields, youtubeconfig.FieldUploadEnabled)
+	}
+	if m.default_privacy != nil {
+		fields = append(fields, youtubeconfig.FieldDefaultPrivacy)
+	}
+	if m.default_category_id != nil {
+		fields = append(fields, youtubeconfig.FieldDefaultCategoryID)
+	}
+	if m.description_template != nil {
+		fields = append(fields, youtubeconfig.FieldDescriptionTemplate)
+	}
+	if m.title_template != nil {
+		fields = append(fields, youtubeconfig.FieldTitleTemplate)
+	}
+	if m.tags != nil {
+		fields = append(fields, youtubeconfig.FieldTags)
+	}
+	if m.add_chapters != nil {
+		fields = append(fields, youtubeconfig.FieldAddChapters)
+	}
+	if m.notify_subscribers != nil {
+		fields = append(fields, youtubeconfig.FieldNotifySubscribers)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, youtubeconfig.FieldUpdatedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, youtubeconfig.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *YoutubeConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case youtubeconfig.FieldUploadEnabled:
+		return m.UploadEnabled()
+	case youtubeconfig.FieldDefaultPrivacy:
+		return m.DefaultPrivacy()
+	case youtubeconfig.FieldDefaultCategoryID:
+		return m.DefaultCategoryID()
+	case youtubeconfig.FieldDescriptionTemplate:
+		return m.DescriptionTemplate()
+	case youtubeconfig.FieldTitleTemplate:
+		return m.TitleTemplate()
+	case youtubeconfig.FieldTags:
+		return m.Tags()
+	case youtubeconfig.FieldAddChapters:
+		return m.AddChapters()
+	case youtubeconfig.FieldNotifySubscribers:
+		return m.NotifySubscribers()
+	case youtubeconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case youtubeconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *YoutubeConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case youtubeconfig.FieldUploadEnabled:
+		return m.OldUploadEnabled(ctx)
+	case youtubeconfig.FieldDefaultPrivacy:
+		return m.OldDefaultPrivacy(ctx)
+	case youtubeconfig.FieldDefaultCategoryID:
+		return m.OldDefaultCategoryID(ctx)
+	case youtubeconfig.FieldDescriptionTemplate:
+		return m.OldDescriptionTemplate(ctx)
+	case youtubeconfig.FieldTitleTemplate:
+		return m.OldTitleTemplate(ctx)
+	case youtubeconfig.FieldTags:
+		return m.OldTags(ctx)
+	case youtubeconfig.FieldAddChapters:
+		return m.OldAddChapters(ctx)
+	case youtubeconfig.FieldNotifySubscribers:
+		return m.OldNotifySubscribers(ctx)
+	case youtubeconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case youtubeconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown YoutubeConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case youtubeconfig.FieldUploadEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUploadEnabled(v)
+		return nil
+	case youtubeconfig.FieldDefaultPrivacy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultPrivacy(v)
+		return nil
+	case youtubeconfig.FieldDefaultCategoryID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultCategoryID(v)
+		return nil
+	case youtubeconfig.FieldDescriptionTemplate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescriptionTemplate(v)
+		return nil
+	case youtubeconfig.FieldTitleTemplate:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitleTemplate(v)
+		return nil
+	case youtubeconfig.FieldTags:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTags(v)
+		return nil
+	case youtubeconfig.FieldAddChapters:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddChapters(v)
+		return nil
+	case youtubeconfig.FieldNotifySubscribers:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotifySubscribers(v)
+		return nil
+	case youtubeconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case youtubeconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *YoutubeConfigMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *YoutubeConfigMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown YoutubeConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *YoutubeConfigMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(youtubeconfig.FieldDescriptionTemplate) {
+		fields = append(fields, youtubeconfig.FieldDescriptionTemplate)
+	}
+	if m.FieldCleared(youtubeconfig.FieldTitleTemplate) {
+		fields = append(fields, youtubeconfig.FieldTitleTemplate)
+	}
+	if m.FieldCleared(youtubeconfig.FieldTags) {
+		fields = append(fields, youtubeconfig.FieldTags)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *YoutubeConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *YoutubeConfigMutation) ClearField(name string) error {
+	switch name {
+	case youtubeconfig.FieldDescriptionTemplate:
+		m.ClearDescriptionTemplate()
+		return nil
+	case youtubeconfig.FieldTitleTemplate:
+		m.ClearTitleTemplate()
+		return nil
+	case youtubeconfig.FieldTags:
+		m.ClearTags()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *YoutubeConfigMutation) ResetField(name string) error {
+	switch name {
+	case youtubeconfig.FieldUploadEnabled:
+		m.ResetUploadEnabled()
+		return nil
+	case youtubeconfig.FieldDefaultPrivacy:
+		m.ResetDefaultPrivacy()
+		return nil
+	case youtubeconfig.FieldDefaultCategoryID:
+		m.ResetDefaultCategoryID()
+		return nil
+	case youtubeconfig.FieldDescriptionTemplate:
+		m.ResetDescriptionTemplate()
+		return nil
+	case youtubeconfig.FieldTitleTemplate:
+		m.ResetTitleTemplate()
+		return nil
+	case youtubeconfig.FieldTags:
+		m.ResetTags()
+		return nil
+	case youtubeconfig.FieldAddChapters:
+		m.ResetAddChapters()
+		return nil
+	case youtubeconfig.FieldNotifySubscribers:
+		m.ResetNotifySubscribers()
+		return nil
+	case youtubeconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case youtubeconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *YoutubeConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.channel != nil {
+		edges = append(edges, youtubeconfig.EdgeChannel)
+	}
+	if m.playlist_mappings != nil {
+		edges = append(edges, youtubeconfig.EdgePlaylistMappings)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *YoutubeConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case youtubeconfig.EdgeChannel:
+		if id := m.channel; id != nil {
+			return []ent.Value{*id}
+		}
+	case youtubeconfig.EdgePlaylistMappings:
+		ids := make([]ent.Value, 0, len(m.playlist_mappings))
+		for id := range m.playlist_mappings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *YoutubeConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedplaylist_mappings != nil {
+		edges = append(edges, youtubeconfig.EdgePlaylistMappings)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *YoutubeConfigMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case youtubeconfig.EdgePlaylistMappings:
+		ids := make([]ent.Value, 0, len(m.removedplaylist_mappings))
+		for id := range m.removedplaylist_mappings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *YoutubeConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedchannel {
+		edges = append(edges, youtubeconfig.EdgeChannel)
+	}
+	if m.clearedplaylist_mappings {
+		edges = append(edges, youtubeconfig.EdgePlaylistMappings)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *YoutubeConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case youtubeconfig.EdgeChannel:
+		return m.clearedchannel
+	case youtubeconfig.EdgePlaylistMappings:
+		return m.clearedplaylist_mappings
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *YoutubeConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case youtubeconfig.EdgeChannel:
+		m.ClearChannel()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *YoutubeConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case youtubeconfig.EdgeChannel:
+		m.ResetChannel()
+		return nil
+	case youtubeconfig.EdgePlaylistMappings:
+		m.ResetPlaylistMappings()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeConfig edge %s", name)
+}
+
+// YoutubeCredentialMutation represents an operation that mutates the YoutubeCredential nodes in the graph.
+type YoutubeCredentialMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	access_token  *string
+	refresh_token *string
+	token_type    *string
+	expiry        *time.Time
+	updated_at    *time.Time
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*YoutubeCredential, error)
+	predicates    []predicate.YoutubeCredential
+}
+
+var _ ent.Mutation = (*YoutubeCredentialMutation)(nil)
+
+// youtubecredentialOption allows management of the mutation configuration using functional options.
+type youtubecredentialOption func(*YoutubeCredentialMutation)
+
+// newYoutubeCredentialMutation creates new mutation for the YoutubeCredential entity.
+func newYoutubeCredentialMutation(c config, op Op, opts ...youtubecredentialOption) *YoutubeCredentialMutation {
+	m := &YoutubeCredentialMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeYoutubeCredential,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withYoutubeCredentialID sets the ID field of the mutation.
+func withYoutubeCredentialID(id uuid.UUID) youtubecredentialOption {
+	return func(m *YoutubeCredentialMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *YoutubeCredential
+		)
+		m.oldValue = func(ctx context.Context) (*YoutubeCredential, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().YoutubeCredential.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withYoutubeCredential sets the old YoutubeCredential of the mutation.
+func withYoutubeCredential(node *YoutubeCredential) youtubecredentialOption {
+	return func(m *YoutubeCredentialMutation) {
+		m.oldValue = func(context.Context) (*YoutubeCredential, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m YoutubeCredentialMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m YoutubeCredentialMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of YoutubeCredential entities.
+func (m *YoutubeCredentialMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *YoutubeCredentialMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *YoutubeCredentialMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().YoutubeCredential.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAccessToken sets the "access_token" field.
+func (m *YoutubeCredentialMutation) SetAccessToken(s string) {
+	m.access_token = &s
+}
+
+// AccessToken returns the value of the "access_token" field in the mutation.
+func (m *YoutubeCredentialMutation) AccessToken() (r string, exists bool) {
+	v := m.access_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessToken returns the old "access_token" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldAccessToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessToken: %w", err)
+	}
+	return oldValue.AccessToken, nil
+}
+
+// ResetAccessToken resets all changes to the "access_token" field.
+func (m *YoutubeCredentialMutation) ResetAccessToken() {
+	m.access_token = nil
+}
+
+// SetRefreshToken sets the "refresh_token" field.
+func (m *YoutubeCredentialMutation) SetRefreshToken(s string) {
+	m.refresh_token = &s
+}
+
+// RefreshToken returns the value of the "refresh_token" field in the mutation.
+func (m *YoutubeCredentialMutation) RefreshToken() (r string, exists bool) {
+	v := m.refresh_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefreshToken returns the old "refresh_token" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldRefreshToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefreshToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefreshToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefreshToken: %w", err)
+	}
+	return oldValue.RefreshToken, nil
+}
+
+// ResetRefreshToken resets all changes to the "refresh_token" field.
+func (m *YoutubeCredentialMutation) ResetRefreshToken() {
+	m.refresh_token = nil
+}
+
+// SetTokenType sets the "token_type" field.
+func (m *YoutubeCredentialMutation) SetTokenType(s string) {
+	m.token_type = &s
+}
+
+// TokenType returns the value of the "token_type" field in the mutation.
+func (m *YoutubeCredentialMutation) TokenType() (r string, exists bool) {
+	v := m.token_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenType returns the old "token_type" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldTokenType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenType: %w", err)
+	}
+	return oldValue.TokenType, nil
+}
+
+// ResetTokenType resets all changes to the "token_type" field.
+func (m *YoutubeCredentialMutation) ResetTokenType() {
+	m.token_type = nil
+}
+
+// SetExpiry sets the "expiry" field.
+func (m *YoutubeCredentialMutation) SetExpiry(t time.Time) {
+	m.expiry = &t
+}
+
+// Expiry returns the value of the "expiry" field in the mutation.
+func (m *YoutubeCredentialMutation) Expiry() (r time.Time, exists bool) {
+	v := m.expiry
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiry returns the old "expiry" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldExpiry(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiry: %w", err)
+	}
+	return oldValue.Expiry, nil
+}
+
+// ResetExpiry resets all changes to the "expiry" field.
+func (m *YoutubeCredentialMutation) ResetExpiry() {
+	m.expiry = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *YoutubeCredentialMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *YoutubeCredentialMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *YoutubeCredentialMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *YoutubeCredentialMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *YoutubeCredentialMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the YoutubeCredential entity.
+// If the YoutubeCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeCredentialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *YoutubeCredentialMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the YoutubeCredentialMutation builder.
+func (m *YoutubeCredentialMutation) Where(ps ...predicate.YoutubeCredential) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the YoutubeCredentialMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *YoutubeCredentialMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.YoutubeCredential, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *YoutubeCredentialMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *YoutubeCredentialMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (YoutubeCredential).
+func (m *YoutubeCredentialMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *YoutubeCredentialMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.access_token != nil {
+		fields = append(fields, youtubecredential.FieldAccessToken)
+	}
+	if m.refresh_token != nil {
+		fields = append(fields, youtubecredential.FieldRefreshToken)
+	}
+	if m.token_type != nil {
+		fields = append(fields, youtubecredential.FieldTokenType)
+	}
+	if m.expiry != nil {
+		fields = append(fields, youtubecredential.FieldExpiry)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, youtubecredential.FieldUpdatedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, youtubecredential.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *YoutubeCredentialMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case youtubecredential.FieldAccessToken:
+		return m.AccessToken()
+	case youtubecredential.FieldRefreshToken:
+		return m.RefreshToken()
+	case youtubecredential.FieldTokenType:
+		return m.TokenType()
+	case youtubecredential.FieldExpiry:
+		return m.Expiry()
+	case youtubecredential.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case youtubecredential.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *YoutubeCredentialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case youtubecredential.FieldAccessToken:
+		return m.OldAccessToken(ctx)
+	case youtubecredential.FieldRefreshToken:
+		return m.OldRefreshToken(ctx)
+	case youtubecredential.FieldTokenType:
+		return m.OldTokenType(ctx)
+	case youtubecredential.FieldExpiry:
+		return m.OldExpiry(ctx)
+	case youtubecredential.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case youtubecredential.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown YoutubeCredential field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeCredentialMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case youtubecredential.FieldAccessToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessToken(v)
+		return nil
+	case youtubecredential.FieldRefreshToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefreshToken(v)
+		return nil
+	case youtubecredential.FieldTokenType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenType(v)
+		return nil
+	case youtubecredential.FieldExpiry:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiry(v)
+		return nil
+	case youtubecredential.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case youtubecredential.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeCredential field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *YoutubeCredentialMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *YoutubeCredentialMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeCredentialMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown YoutubeCredential numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *YoutubeCredentialMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *YoutubeCredentialMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *YoutubeCredentialMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown YoutubeCredential nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *YoutubeCredentialMutation) ResetField(name string) error {
+	switch name {
+	case youtubecredential.FieldAccessToken:
+		m.ResetAccessToken()
+		return nil
+	case youtubecredential.FieldRefreshToken:
+		m.ResetRefreshToken()
+		return nil
+	case youtubecredential.FieldTokenType:
+		m.ResetTokenType()
+		return nil
+	case youtubecredential.FieldExpiry:
+		m.ResetExpiry()
+		return nil
+	case youtubecredential.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case youtubecredential.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeCredential field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *YoutubeCredentialMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *YoutubeCredentialMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *YoutubeCredentialMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *YoutubeCredentialMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *YoutubeCredentialMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *YoutubeCredentialMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *YoutubeCredentialMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown YoutubeCredential unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *YoutubeCredentialMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown YoutubeCredential edge %s", name)
+}
+
+// YoutubePlaylistMappingMutation represents an operation that mutates the YoutubePlaylistMapping nodes in the graph.
+type YoutubePlaylistMappingMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	game_category         *string
+	playlist_id           *string
+	playlist_name         *string
+	priority              *int
+	addpriority           *int
+	updated_at            *time.Time
+	created_at            *time.Time
+	clearedFields         map[string]struct{}
+	youtube_config        *uuid.UUID
+	clearedyoutube_config bool
+	done                  bool
+	oldValue              func(context.Context) (*YoutubePlaylistMapping, error)
+	predicates            []predicate.YoutubePlaylistMapping
+}
+
+var _ ent.Mutation = (*YoutubePlaylistMappingMutation)(nil)
+
+// youtubeplaylistmappingOption allows management of the mutation configuration using functional options.
+type youtubeplaylistmappingOption func(*YoutubePlaylistMappingMutation)
+
+// newYoutubePlaylistMappingMutation creates new mutation for the YoutubePlaylistMapping entity.
+func newYoutubePlaylistMappingMutation(c config, op Op, opts ...youtubeplaylistmappingOption) *YoutubePlaylistMappingMutation {
+	m := &YoutubePlaylistMappingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeYoutubePlaylistMapping,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withYoutubePlaylistMappingID sets the ID field of the mutation.
+func withYoutubePlaylistMappingID(id uuid.UUID) youtubeplaylistmappingOption {
+	return func(m *YoutubePlaylistMappingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *YoutubePlaylistMapping
+		)
+		m.oldValue = func(ctx context.Context) (*YoutubePlaylistMapping, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().YoutubePlaylistMapping.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withYoutubePlaylistMapping sets the old YoutubePlaylistMapping of the mutation.
+func withYoutubePlaylistMapping(node *YoutubePlaylistMapping) youtubeplaylistmappingOption {
+	return func(m *YoutubePlaylistMappingMutation) {
+		m.oldValue = func(context.Context) (*YoutubePlaylistMapping, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m YoutubePlaylistMappingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m YoutubePlaylistMappingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of YoutubePlaylistMapping entities.
+func (m *YoutubePlaylistMappingMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *YoutubePlaylistMappingMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *YoutubePlaylistMappingMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().YoutubePlaylistMapping.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetGameCategory sets the "game_category" field.
+func (m *YoutubePlaylistMappingMutation) SetGameCategory(s string) {
+	m.game_category = &s
+}
+
+// GameCategory returns the value of the "game_category" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) GameCategory() (r string, exists bool) {
+	v := m.game_category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGameCategory returns the old "game_category" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldGameCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGameCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGameCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGameCategory: %w", err)
+	}
+	return oldValue.GameCategory, nil
+}
+
+// ResetGameCategory resets all changes to the "game_category" field.
+func (m *YoutubePlaylistMappingMutation) ResetGameCategory() {
+	m.game_category = nil
+}
+
+// SetPlaylistID sets the "playlist_id" field.
+func (m *YoutubePlaylistMappingMutation) SetPlaylistID(s string) {
+	m.playlist_id = &s
+}
+
+// PlaylistID returns the value of the "playlist_id" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) PlaylistID() (r string, exists bool) {
+	v := m.playlist_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaylistID returns the old "playlist_id" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldPlaylistID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaylistID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaylistID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaylistID: %w", err)
+	}
+	return oldValue.PlaylistID, nil
+}
+
+// ResetPlaylistID resets all changes to the "playlist_id" field.
+func (m *YoutubePlaylistMappingMutation) ResetPlaylistID() {
+	m.playlist_id = nil
+}
+
+// SetPlaylistName sets the "playlist_name" field.
+func (m *YoutubePlaylistMappingMutation) SetPlaylistName(s string) {
+	m.playlist_name = &s
+}
+
+// PlaylistName returns the value of the "playlist_name" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) PlaylistName() (r string, exists bool) {
+	v := m.playlist_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaylistName returns the old "playlist_name" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldPlaylistName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaylistName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaylistName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaylistName: %w", err)
+	}
+	return oldValue.PlaylistName, nil
+}
+
+// ClearPlaylistName clears the value of the "playlist_name" field.
+func (m *YoutubePlaylistMappingMutation) ClearPlaylistName() {
+	m.playlist_name = nil
+	m.clearedFields[youtubeplaylistmapping.FieldPlaylistName] = struct{}{}
+}
+
+// PlaylistNameCleared returns if the "playlist_name" field was cleared in this mutation.
+func (m *YoutubePlaylistMappingMutation) PlaylistNameCleared() bool {
+	_, ok := m.clearedFields[youtubeplaylistmapping.FieldPlaylistName]
+	return ok
+}
+
+// ResetPlaylistName resets all changes to the "playlist_name" field.
+func (m *YoutubePlaylistMappingMutation) ResetPlaylistName() {
+	m.playlist_name = nil
+	delete(m.clearedFields, youtubeplaylistmapping.FieldPlaylistName)
+}
+
+// SetPriority sets the "priority" field.
+func (m *YoutubePlaylistMappingMutation) SetPriority(i int) {
+	m.priority = &i
+	m.addpriority = nil
+}
+
+// Priority returns the value of the "priority" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) Priority() (r int, exists bool) {
+	v := m.priority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriority returns the old "priority" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldPriority(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriority requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
+	}
+	return oldValue.Priority, nil
+}
+
+// AddPriority adds i to the "priority" field.
+func (m *YoutubePlaylistMappingMutation) AddPriority(i int) {
+	if m.addpriority != nil {
+		*m.addpriority += i
+	} else {
+		m.addpriority = &i
+	}
+}
+
+// AddedPriority returns the value that was added to the "priority" field in this mutation.
+func (m *YoutubePlaylistMappingMutation) AddedPriority() (r int, exists bool) {
+	v := m.addpriority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriority resets all changes to the "priority" field.
+func (m *YoutubePlaylistMappingMutation) ResetPriority() {
+	m.priority = nil
+	m.addpriority = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *YoutubePlaylistMappingMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *YoutubePlaylistMappingMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *YoutubePlaylistMappingMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *YoutubePlaylistMappingMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the YoutubePlaylistMapping entity.
+// If the YoutubePlaylistMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubePlaylistMappingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *YoutubePlaylistMappingMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by id.
+func (m *YoutubePlaylistMappingMutation) SetYoutubeConfigID(id uuid.UUID) {
+	m.youtube_config = &id
+}
+
+// ClearYoutubeConfig clears the "youtube_config" edge to the YoutubeConfig entity.
+func (m *YoutubePlaylistMappingMutation) ClearYoutubeConfig() {
+	m.clearedyoutube_config = true
+}
+
+// YoutubeConfigCleared reports if the "youtube_config" edge to the YoutubeConfig entity was cleared.
+func (m *YoutubePlaylistMappingMutation) YoutubeConfigCleared() bool {
+	return m.clearedyoutube_config
+}
+
+// YoutubeConfigID returns the "youtube_config" edge ID in the mutation.
+func (m *YoutubePlaylistMappingMutation) YoutubeConfigID() (id uuid.UUID, exists bool) {
+	if m.youtube_config != nil {
+		return *m.youtube_config, true
+	}
+	return
+}
+
+// YoutubeConfigIDs returns the "youtube_config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// YoutubeConfigID instead. It exists only for internal usage by the builders.
+func (m *YoutubePlaylistMappingMutation) YoutubeConfigIDs() (ids []uuid.UUID) {
+	if id := m.youtube_config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetYoutubeConfig resets all changes to the "youtube_config" edge.
+func (m *YoutubePlaylistMappingMutation) ResetYoutubeConfig() {
+	m.youtube_config = nil
+	m.clearedyoutube_config = false
+}
+
+// Where appends a list predicates to the YoutubePlaylistMappingMutation builder.
+func (m *YoutubePlaylistMappingMutation) Where(ps ...predicate.YoutubePlaylistMapping) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the YoutubePlaylistMappingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *YoutubePlaylistMappingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.YoutubePlaylistMapping, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *YoutubePlaylistMappingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *YoutubePlaylistMappingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (YoutubePlaylistMapping).
+func (m *YoutubePlaylistMappingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *YoutubePlaylistMappingMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.game_category != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldGameCategory)
+	}
+	if m.playlist_id != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldPlaylistID)
+	}
+	if m.playlist_name != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldPlaylistName)
+	}
+	if m.priority != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldPriority)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldUpdatedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *YoutubePlaylistMappingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case youtubeplaylistmapping.FieldGameCategory:
+		return m.GameCategory()
+	case youtubeplaylistmapping.FieldPlaylistID:
+		return m.PlaylistID()
+	case youtubeplaylistmapping.FieldPlaylistName:
+		return m.PlaylistName()
+	case youtubeplaylistmapping.FieldPriority:
+		return m.Priority()
+	case youtubeplaylistmapping.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case youtubeplaylistmapping.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *YoutubePlaylistMappingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case youtubeplaylistmapping.FieldGameCategory:
+		return m.OldGameCategory(ctx)
+	case youtubeplaylistmapping.FieldPlaylistID:
+		return m.OldPlaylistID(ctx)
+	case youtubeplaylistmapping.FieldPlaylistName:
+		return m.OldPlaylistName(ctx)
+	case youtubeplaylistmapping.FieldPriority:
+		return m.OldPriority(ctx)
+	case youtubeplaylistmapping.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case youtubeplaylistmapping.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown YoutubePlaylistMapping field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubePlaylistMappingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case youtubeplaylistmapping.FieldGameCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGameCategory(v)
+		return nil
+	case youtubeplaylistmapping.FieldPlaylistID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaylistID(v)
+		return nil
+	case youtubeplaylistmapping.FieldPlaylistName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaylistName(v)
+		return nil
+	case youtubeplaylistmapping.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriority(v)
+		return nil
+	case youtubeplaylistmapping.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case youtubeplaylistmapping.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *YoutubePlaylistMappingMutation) AddedFields() []string {
+	var fields []string
+	if m.addpriority != nil {
+		fields = append(fields, youtubeplaylistmapping.FieldPriority)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *YoutubePlaylistMappingMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case youtubeplaylistmapping.FieldPriority:
+		return m.AddedPriority()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubePlaylistMappingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case youtubeplaylistmapping.FieldPriority:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriority(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *YoutubePlaylistMappingMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(youtubeplaylistmapping.FieldPlaylistName) {
+		fields = append(fields, youtubeplaylistmapping.FieldPlaylistName)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *YoutubePlaylistMappingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *YoutubePlaylistMappingMutation) ClearField(name string) error {
+	switch name {
+	case youtubeplaylistmapping.FieldPlaylistName:
+		m.ClearPlaylistName()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *YoutubePlaylistMappingMutation) ResetField(name string) error {
+	switch name {
+	case youtubeplaylistmapping.FieldGameCategory:
+		m.ResetGameCategory()
+		return nil
+	case youtubeplaylistmapping.FieldPlaylistID:
+		m.ResetPlaylistID()
+		return nil
+	case youtubeplaylistmapping.FieldPlaylistName:
+		m.ResetPlaylistName()
+		return nil
+	case youtubeplaylistmapping.FieldPriority:
+		m.ResetPriority()
+		return nil
+	case youtubeplaylistmapping.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case youtubeplaylistmapping.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *YoutubePlaylistMappingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.youtube_config != nil {
+		edges = append(edges, youtubeplaylistmapping.EdgeYoutubeConfig)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *YoutubePlaylistMappingMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case youtubeplaylistmapping.EdgeYoutubeConfig:
+		if id := m.youtube_config; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *YoutubePlaylistMappingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *YoutubePlaylistMappingMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *YoutubePlaylistMappingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedyoutube_config {
+		edges = append(edges, youtubeplaylistmapping.EdgeYoutubeConfig)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *YoutubePlaylistMappingMutation) EdgeCleared(name string) bool {
+	switch name {
+	case youtubeplaylistmapping.EdgeYoutubeConfig:
+		return m.clearedyoutube_config
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *YoutubePlaylistMappingMutation) ClearEdge(name string) error {
+	switch name {
+	case youtubeplaylistmapping.EdgeYoutubeConfig:
+		m.ClearYoutubeConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *YoutubePlaylistMappingMutation) ResetEdge(name string) error {
+	switch name {
+	case youtubeplaylistmapping.EdgeYoutubeConfig:
+		m.ResetYoutubeConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubePlaylistMapping edge %s", name)
+}
+
+// YoutubeUploadMutation represents an operation that mutates the YoutubeUpload nodes in the graph.
+type YoutubeUploadMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	youtube_video_id   *string
+	youtube_url        *string
+	status             *string
+	error_message      *string
+	retry_count        *int
+	addretry_count     *int
+	uploaded_at        *time.Time
+	playlist_ids       *[]string
+	appendplaylist_ids []string
+	updated_at         *time.Time
+	created_at         *time.Time
+	clearedFields      map[string]struct{}
+	vod                *uuid.UUID
+	clearedvod         bool
+	done               bool
+	oldValue           func(context.Context) (*YoutubeUpload, error)
+	predicates         []predicate.YoutubeUpload
+}
+
+var _ ent.Mutation = (*YoutubeUploadMutation)(nil)
+
+// youtubeuploadOption allows management of the mutation configuration using functional options.
+type youtubeuploadOption func(*YoutubeUploadMutation)
+
+// newYoutubeUploadMutation creates new mutation for the YoutubeUpload entity.
+func newYoutubeUploadMutation(c config, op Op, opts ...youtubeuploadOption) *YoutubeUploadMutation {
+	m := &YoutubeUploadMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeYoutubeUpload,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withYoutubeUploadID sets the ID field of the mutation.
+func withYoutubeUploadID(id uuid.UUID) youtubeuploadOption {
+	return func(m *YoutubeUploadMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *YoutubeUpload
+		)
+		m.oldValue = func(ctx context.Context) (*YoutubeUpload, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().YoutubeUpload.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withYoutubeUpload sets the old YoutubeUpload of the mutation.
+func withYoutubeUpload(node *YoutubeUpload) youtubeuploadOption {
+	return func(m *YoutubeUploadMutation) {
+		m.oldValue = func(context.Context) (*YoutubeUpload, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m YoutubeUploadMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m YoutubeUploadMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of YoutubeUpload entities.
+func (m *YoutubeUploadMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *YoutubeUploadMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *YoutubeUploadMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().YoutubeUpload.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetYoutubeVideoID sets the "youtube_video_id" field.
+func (m *YoutubeUploadMutation) SetYoutubeVideoID(s string) {
+	m.youtube_video_id = &s
+}
+
+// YoutubeVideoID returns the value of the "youtube_video_id" field in the mutation.
+func (m *YoutubeUploadMutation) YoutubeVideoID() (r string, exists bool) {
+	v := m.youtube_video_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldYoutubeVideoID returns the old "youtube_video_id" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldYoutubeVideoID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldYoutubeVideoID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldYoutubeVideoID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldYoutubeVideoID: %w", err)
+	}
+	return oldValue.YoutubeVideoID, nil
+}
+
+// ClearYoutubeVideoID clears the value of the "youtube_video_id" field.
+func (m *YoutubeUploadMutation) ClearYoutubeVideoID() {
+	m.youtube_video_id = nil
+	m.clearedFields[youtubeupload.FieldYoutubeVideoID] = struct{}{}
+}
+
+// YoutubeVideoIDCleared returns if the "youtube_video_id" field was cleared in this mutation.
+func (m *YoutubeUploadMutation) YoutubeVideoIDCleared() bool {
+	_, ok := m.clearedFields[youtubeupload.FieldYoutubeVideoID]
+	return ok
+}
+
+// ResetYoutubeVideoID resets all changes to the "youtube_video_id" field.
+func (m *YoutubeUploadMutation) ResetYoutubeVideoID() {
+	m.youtube_video_id = nil
+	delete(m.clearedFields, youtubeupload.FieldYoutubeVideoID)
+}
+
+// SetYoutubeURL sets the "youtube_url" field.
+func (m *YoutubeUploadMutation) SetYoutubeURL(s string) {
+	m.youtube_url = &s
+}
+
+// YoutubeURL returns the value of the "youtube_url" field in the mutation.
+func (m *YoutubeUploadMutation) YoutubeURL() (r string, exists bool) {
+	v := m.youtube_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldYoutubeURL returns the old "youtube_url" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldYoutubeURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldYoutubeURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldYoutubeURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldYoutubeURL: %w", err)
+	}
+	return oldValue.YoutubeURL, nil
+}
+
+// ClearYoutubeURL clears the value of the "youtube_url" field.
+func (m *YoutubeUploadMutation) ClearYoutubeURL() {
+	m.youtube_url = nil
+	m.clearedFields[youtubeupload.FieldYoutubeURL] = struct{}{}
+}
+
+// YoutubeURLCleared returns if the "youtube_url" field was cleared in this mutation.
+func (m *YoutubeUploadMutation) YoutubeURLCleared() bool {
+	_, ok := m.clearedFields[youtubeupload.FieldYoutubeURL]
+	return ok
+}
+
+// ResetYoutubeURL resets all changes to the "youtube_url" field.
+func (m *YoutubeUploadMutation) ResetYoutubeURL() {
+	m.youtube_url = nil
+	delete(m.clearedFields, youtubeupload.FieldYoutubeURL)
+}
+
+// SetStatus sets the "status" field.
+func (m *YoutubeUploadMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *YoutubeUploadMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *YoutubeUploadMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (m *YoutubeUploadMutation) SetErrorMessage(s string) {
+	m.error_message = &s
+}
+
+// ErrorMessage returns the value of the "error_message" field in the mutation.
+func (m *YoutubeUploadMutation) ErrorMessage() (r string, exists bool) {
+	v := m.error_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorMessage returns the old "error_message" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldErrorMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorMessage: %w", err)
+	}
+	return oldValue.ErrorMessage, nil
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (m *YoutubeUploadMutation) ClearErrorMessage() {
+	m.error_message = nil
+	m.clearedFields[youtubeupload.FieldErrorMessage] = struct{}{}
+}
+
+// ErrorMessageCleared returns if the "error_message" field was cleared in this mutation.
+func (m *YoutubeUploadMutation) ErrorMessageCleared() bool {
+	_, ok := m.clearedFields[youtubeupload.FieldErrorMessage]
+	return ok
+}
+
+// ResetErrorMessage resets all changes to the "error_message" field.
+func (m *YoutubeUploadMutation) ResetErrorMessage() {
+	m.error_message = nil
+	delete(m.clearedFields, youtubeupload.FieldErrorMessage)
+}
+
+// SetRetryCount sets the "retry_count" field.
+func (m *YoutubeUploadMutation) SetRetryCount(i int) {
+	m.retry_count = &i
+	m.addretry_count = nil
+}
+
+// RetryCount returns the value of the "retry_count" field in the mutation.
+func (m *YoutubeUploadMutation) RetryCount() (r int, exists bool) {
+	v := m.retry_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRetryCount returns the old "retry_count" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldRetryCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRetryCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRetryCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRetryCount: %w", err)
+	}
+	return oldValue.RetryCount, nil
+}
+
+// AddRetryCount adds i to the "retry_count" field.
+func (m *YoutubeUploadMutation) AddRetryCount(i int) {
+	if m.addretry_count != nil {
+		*m.addretry_count += i
+	} else {
+		m.addretry_count = &i
+	}
+}
+
+// AddedRetryCount returns the value that was added to the "retry_count" field in this mutation.
+func (m *YoutubeUploadMutation) AddedRetryCount() (r int, exists bool) {
+	v := m.addretry_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRetryCount resets all changes to the "retry_count" field.
+func (m *YoutubeUploadMutation) ResetRetryCount() {
+	m.retry_count = nil
+	m.addretry_count = nil
+}
+
+// SetUploadedAt sets the "uploaded_at" field.
+func (m *YoutubeUploadMutation) SetUploadedAt(t time.Time) {
+	m.uploaded_at = &t
+}
+
+// UploadedAt returns the value of the "uploaded_at" field in the mutation.
+func (m *YoutubeUploadMutation) UploadedAt() (r time.Time, exists bool) {
+	v := m.uploaded_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUploadedAt returns the old "uploaded_at" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldUploadedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUploadedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUploadedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUploadedAt: %w", err)
+	}
+	return oldValue.UploadedAt, nil
+}
+
+// ClearUploadedAt clears the value of the "uploaded_at" field.
+func (m *YoutubeUploadMutation) ClearUploadedAt() {
+	m.uploaded_at = nil
+	m.clearedFields[youtubeupload.FieldUploadedAt] = struct{}{}
+}
+
+// UploadedAtCleared returns if the "uploaded_at" field was cleared in this mutation.
+func (m *YoutubeUploadMutation) UploadedAtCleared() bool {
+	_, ok := m.clearedFields[youtubeupload.FieldUploadedAt]
+	return ok
+}
+
+// ResetUploadedAt resets all changes to the "uploaded_at" field.
+func (m *YoutubeUploadMutation) ResetUploadedAt() {
+	m.uploaded_at = nil
+	delete(m.clearedFields, youtubeupload.FieldUploadedAt)
+}
+
+// SetPlaylistIds sets the "playlist_ids" field.
+func (m *YoutubeUploadMutation) SetPlaylistIds(s []string) {
+	m.playlist_ids = &s
+	m.appendplaylist_ids = nil
+}
+
+// PlaylistIds returns the value of the "playlist_ids" field in the mutation.
+func (m *YoutubeUploadMutation) PlaylistIds() (r []string, exists bool) {
+	v := m.playlist_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaylistIds returns the old "playlist_ids" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldPlaylistIds(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaylistIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaylistIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaylistIds: %w", err)
+	}
+	return oldValue.PlaylistIds, nil
+}
+
+// AppendPlaylistIds adds s to the "playlist_ids" field.
+func (m *YoutubeUploadMutation) AppendPlaylistIds(s []string) {
+	m.appendplaylist_ids = append(m.appendplaylist_ids, s...)
+}
+
+// AppendedPlaylistIds returns the list of values that were appended to the "playlist_ids" field in this mutation.
+func (m *YoutubeUploadMutation) AppendedPlaylistIds() ([]string, bool) {
+	if len(m.appendplaylist_ids) == 0 {
+		return nil, false
+	}
+	return m.appendplaylist_ids, true
+}
+
+// ClearPlaylistIds clears the value of the "playlist_ids" field.
+func (m *YoutubeUploadMutation) ClearPlaylistIds() {
+	m.playlist_ids = nil
+	m.appendplaylist_ids = nil
+	m.clearedFields[youtubeupload.FieldPlaylistIds] = struct{}{}
+}
+
+// PlaylistIdsCleared returns if the "playlist_ids" field was cleared in this mutation.
+func (m *YoutubeUploadMutation) PlaylistIdsCleared() bool {
+	_, ok := m.clearedFields[youtubeupload.FieldPlaylistIds]
+	return ok
+}
+
+// ResetPlaylistIds resets all changes to the "playlist_ids" field.
+func (m *YoutubeUploadMutation) ResetPlaylistIds() {
+	m.playlist_ids = nil
+	m.appendplaylist_ids = nil
+	delete(m.clearedFields, youtubeupload.FieldPlaylistIds)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *YoutubeUploadMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *YoutubeUploadMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *YoutubeUploadMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *YoutubeUploadMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *YoutubeUploadMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the YoutubeUpload entity.
+// If the YoutubeUpload object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *YoutubeUploadMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *YoutubeUploadMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetVodID sets the "vod" edge to the Vod entity by id.
+func (m *YoutubeUploadMutation) SetVodID(id uuid.UUID) {
+	m.vod = &id
+}
+
+// ClearVod clears the "vod" edge to the Vod entity.
+func (m *YoutubeUploadMutation) ClearVod() {
+	m.clearedvod = true
+}
+
+// VodCleared reports if the "vod" edge to the Vod entity was cleared.
+func (m *YoutubeUploadMutation) VodCleared() bool {
+	return m.clearedvod
+}
+
+// VodID returns the "vod" edge ID in the mutation.
+func (m *YoutubeUploadMutation) VodID() (id uuid.UUID, exists bool) {
+	if m.vod != nil {
+		return *m.vod, true
+	}
+	return
+}
+
+// VodIDs returns the "vod" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VodID instead. It exists only for internal usage by the builders.
+func (m *YoutubeUploadMutation) VodIDs() (ids []uuid.UUID) {
+	if id := m.vod; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVod resets all changes to the "vod" edge.
+func (m *YoutubeUploadMutation) ResetVod() {
+	m.vod = nil
+	m.clearedvod = false
+}
+
+// Where appends a list predicates to the YoutubeUploadMutation builder.
+func (m *YoutubeUploadMutation) Where(ps ...predicate.YoutubeUpload) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the YoutubeUploadMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *YoutubeUploadMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.YoutubeUpload, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *YoutubeUploadMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *YoutubeUploadMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (YoutubeUpload).
+func (m *YoutubeUploadMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *YoutubeUploadMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.youtube_video_id != nil {
+		fields = append(fields, youtubeupload.FieldYoutubeVideoID)
+	}
+	if m.youtube_url != nil {
+		fields = append(fields, youtubeupload.FieldYoutubeURL)
+	}
+	if m.status != nil {
+		fields = append(fields, youtubeupload.FieldStatus)
+	}
+	if m.error_message != nil {
+		fields = append(fields, youtubeupload.FieldErrorMessage)
+	}
+	if m.retry_count != nil {
+		fields = append(fields, youtubeupload.FieldRetryCount)
+	}
+	if m.uploaded_at != nil {
+		fields = append(fields, youtubeupload.FieldUploadedAt)
+	}
+	if m.playlist_ids != nil {
+		fields = append(fields, youtubeupload.FieldPlaylistIds)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, youtubeupload.FieldUpdatedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, youtubeupload.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *YoutubeUploadMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case youtubeupload.FieldYoutubeVideoID:
+		return m.YoutubeVideoID()
+	case youtubeupload.FieldYoutubeURL:
+		return m.YoutubeURL()
+	case youtubeupload.FieldStatus:
+		return m.Status()
+	case youtubeupload.FieldErrorMessage:
+		return m.ErrorMessage()
+	case youtubeupload.FieldRetryCount:
+		return m.RetryCount()
+	case youtubeupload.FieldUploadedAt:
+		return m.UploadedAt()
+	case youtubeupload.FieldPlaylistIds:
+		return m.PlaylistIds()
+	case youtubeupload.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case youtubeupload.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *YoutubeUploadMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case youtubeupload.FieldYoutubeVideoID:
+		return m.OldYoutubeVideoID(ctx)
+	case youtubeupload.FieldYoutubeURL:
+		return m.OldYoutubeURL(ctx)
+	case youtubeupload.FieldStatus:
+		return m.OldStatus(ctx)
+	case youtubeupload.FieldErrorMessage:
+		return m.OldErrorMessage(ctx)
+	case youtubeupload.FieldRetryCount:
+		return m.OldRetryCount(ctx)
+	case youtubeupload.FieldUploadedAt:
+		return m.OldUploadedAt(ctx)
+	case youtubeupload.FieldPlaylistIds:
+		return m.OldPlaylistIds(ctx)
+	case youtubeupload.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case youtubeupload.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown YoutubeUpload field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeUploadMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case youtubeupload.FieldYoutubeVideoID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetYoutubeVideoID(v)
+		return nil
+	case youtubeupload.FieldYoutubeURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetYoutubeURL(v)
+		return nil
+	case youtubeupload.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case youtubeupload.FieldErrorMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorMessage(v)
+		return nil
+	case youtubeupload.FieldRetryCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRetryCount(v)
+		return nil
+	case youtubeupload.FieldUploadedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUploadedAt(v)
+		return nil
+	case youtubeupload.FieldPlaylistIds:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaylistIds(v)
+		return nil
+	case youtubeupload.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case youtubeupload.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *YoutubeUploadMutation) AddedFields() []string {
+	var fields []string
+	if m.addretry_count != nil {
+		fields = append(fields, youtubeupload.FieldRetryCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *YoutubeUploadMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case youtubeupload.FieldRetryCount:
+		return m.AddedRetryCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *YoutubeUploadMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case youtubeupload.FieldRetryCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRetryCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *YoutubeUploadMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(youtubeupload.FieldYoutubeVideoID) {
+		fields = append(fields, youtubeupload.FieldYoutubeVideoID)
+	}
+	if m.FieldCleared(youtubeupload.FieldYoutubeURL) {
+		fields = append(fields, youtubeupload.FieldYoutubeURL)
+	}
+	if m.FieldCleared(youtubeupload.FieldErrorMessage) {
+		fields = append(fields, youtubeupload.FieldErrorMessage)
+	}
+	if m.FieldCleared(youtubeupload.FieldUploadedAt) {
+		fields = append(fields, youtubeupload.FieldUploadedAt)
+	}
+	if m.FieldCleared(youtubeupload.FieldPlaylistIds) {
+		fields = append(fields, youtubeupload.FieldPlaylistIds)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *YoutubeUploadMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *YoutubeUploadMutation) ClearField(name string) error {
+	switch name {
+	case youtubeupload.FieldYoutubeVideoID:
+		m.ClearYoutubeVideoID()
+		return nil
+	case youtubeupload.FieldYoutubeURL:
+		m.ClearYoutubeURL()
+		return nil
+	case youtubeupload.FieldErrorMessage:
+		m.ClearErrorMessage()
+		return nil
+	case youtubeupload.FieldUploadedAt:
+		m.ClearUploadedAt()
+		return nil
+	case youtubeupload.FieldPlaylistIds:
+		m.ClearPlaylistIds()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *YoutubeUploadMutation) ResetField(name string) error {
+	switch name {
+	case youtubeupload.FieldYoutubeVideoID:
+		m.ResetYoutubeVideoID()
+		return nil
+	case youtubeupload.FieldYoutubeURL:
+		m.ResetYoutubeURL()
+		return nil
+	case youtubeupload.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case youtubeupload.FieldErrorMessage:
+		m.ResetErrorMessage()
+		return nil
+	case youtubeupload.FieldRetryCount:
+		m.ResetRetryCount()
+		return nil
+	case youtubeupload.FieldUploadedAt:
+		m.ResetUploadedAt()
+		return nil
+	case youtubeupload.FieldPlaylistIds:
+		m.ResetPlaylistIds()
+		return nil
+	case youtubeupload.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case youtubeupload.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *YoutubeUploadMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.vod != nil {
+		edges = append(edges, youtubeupload.EdgeVod)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *YoutubeUploadMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case youtubeupload.EdgeVod:
+		if id := m.vod; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *YoutubeUploadMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *YoutubeUploadMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *YoutubeUploadMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedvod {
+		edges = append(edges, youtubeupload.EdgeVod)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *YoutubeUploadMutation) EdgeCleared(name string) bool {
+	switch name {
+	case youtubeupload.EdgeVod:
+		return m.clearedvod
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *YoutubeUploadMutation) ClearEdge(name string) error {
+	switch name {
+	case youtubeupload.EdgeVod:
+		m.ClearVod()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *YoutubeUploadMutation) ResetEdge(name string) error {
+	switch name {
+	case youtubeupload.EdgeVod:
+		m.ResetVod()
+		return nil
+	}
+	return fmt.Errorf("unknown YoutubeUpload edge %s", name)
 }

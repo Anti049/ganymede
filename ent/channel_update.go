@@ -16,6 +16,7 @@ import (
 	"github.com/zibbp/ganymede/ent/live"
 	"github.com/zibbp/ganymede/ent/predicate"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
 )
 
 // ChannelUpdate is the builder for updating Channel entities.
@@ -191,6 +192,25 @@ func (_u *ChannelUpdate) AddLive(v ...*Live) *ChannelUpdate {
 	return _u.AddLiveIDs(ids...)
 }
 
+// SetYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by ID.
+func (_u *ChannelUpdate) SetYoutubeConfigID(id uuid.UUID) *ChannelUpdate {
+	_u.mutation.SetYoutubeConfigID(id)
+	return _u
+}
+
+// SetNillableYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by ID if the given value is not nil.
+func (_u *ChannelUpdate) SetNillableYoutubeConfigID(id *uuid.UUID) *ChannelUpdate {
+	if id != nil {
+		_u = _u.SetYoutubeConfigID(*id)
+	}
+	return _u
+}
+
+// SetYoutubeConfig sets the "youtube_config" edge to the YoutubeConfig entity.
+func (_u *ChannelUpdate) SetYoutubeConfig(v *YoutubeConfig) *ChannelUpdate {
+	return _u.SetYoutubeConfigID(v.ID)
+}
+
 // Mutation returns the ChannelMutation object of the builder.
 func (_u *ChannelUpdate) Mutation() *ChannelMutation {
 	return _u.mutation
@@ -236,6 +256,12 @@ func (_u *ChannelUpdate) RemoveLive(v ...*Live) *ChannelUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLiveIDs(ids...)
+}
+
+// ClearYoutubeConfig clears the "youtube_config" edge to the YoutubeConfig entity.
+func (_u *ChannelUpdate) ClearYoutubeConfig() *ChannelUpdate {
+	_u.mutation.ClearYoutubeConfig()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -402,6 +428,35 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(live.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.YoutubeConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   channel.YoutubeConfigTable,
+			Columns: []string{channel.YoutubeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.YoutubeConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   channel.YoutubeConfigTable,
+			Columns: []string{channel.YoutubeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -589,6 +644,25 @@ func (_u *ChannelUpdateOne) AddLive(v ...*Live) *ChannelUpdateOne {
 	return _u.AddLiveIDs(ids...)
 }
 
+// SetYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by ID.
+func (_u *ChannelUpdateOne) SetYoutubeConfigID(id uuid.UUID) *ChannelUpdateOne {
+	_u.mutation.SetYoutubeConfigID(id)
+	return _u
+}
+
+// SetNillableYoutubeConfigID sets the "youtube_config" edge to the YoutubeConfig entity by ID if the given value is not nil.
+func (_u *ChannelUpdateOne) SetNillableYoutubeConfigID(id *uuid.UUID) *ChannelUpdateOne {
+	if id != nil {
+		_u = _u.SetYoutubeConfigID(*id)
+	}
+	return _u
+}
+
+// SetYoutubeConfig sets the "youtube_config" edge to the YoutubeConfig entity.
+func (_u *ChannelUpdateOne) SetYoutubeConfig(v *YoutubeConfig) *ChannelUpdateOne {
+	return _u.SetYoutubeConfigID(v.ID)
+}
+
 // Mutation returns the ChannelMutation object of the builder.
 func (_u *ChannelUpdateOne) Mutation() *ChannelMutation {
 	return _u.mutation
@@ -634,6 +708,12 @@ func (_u *ChannelUpdateOne) RemoveLive(v ...*Live) *ChannelUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveLiveIDs(ids...)
+}
+
+// ClearYoutubeConfig clears the "youtube_config" edge to the YoutubeConfig entity.
+func (_u *ChannelUpdateOne) ClearYoutubeConfig() *ChannelUpdateOne {
+	_u.mutation.ClearYoutubeConfig()
+	return _u
 }
 
 // Where appends a list predicates to the ChannelUpdate builder.
@@ -830,6 +910,35 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(live.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.YoutubeConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   channel.YoutubeConfigTable,
+			Columns: []string{channel.YoutubeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.YoutubeConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   channel.YoutubeConfigTable,
+			Columns: []string{channel.YoutubeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(youtubeconfig.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -35,6 +35,11 @@ type EnvConfig struct {
 	TwitchClientId     string `env:"TWITCH_CLIENT_ID, required"`
 	TwitchClientSecret string `env:"TWITCH_CLIENT_SECRET, required"`
 
+	// YouTube OAuth2
+	YoutubeClientID     string `env:"YOUTUBE_CLIENT_ID, default="`
+	YoutubeClientSecret string `env:"YOUTUBE_CLIENT_SECRET, default="`
+	YoutubeRedirectURL  string `env:"YOUTUBE_REDIRECT_URL, default="`
+
 	// worker config
 	MaxChatDownloadExecutions         int `env:"MAX_CHAT_DOWNLOAD_EXECUTIONS, default=3"`
 	MaxChatRenderExecutions           int `env:"MAX_CHAT_RENDER_EXECUTIONS, default=2"`

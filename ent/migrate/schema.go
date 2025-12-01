@@ -426,6 +426,104 @@ var (
 			},
 		},
 	}
+	// YoutubeConfigsColumns holds the columns for the "youtube_configs" table.
+	YoutubeConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "upload_enabled", Type: field.TypeBool, Default: false},
+		{Name: "default_privacy", Type: field.TypeString, Default: "private"},
+		{Name: "default_category_id", Type: field.TypeString, Default: "20"},
+		{Name: "description_template", Type: field.TypeString, Nullable: true},
+		{Name: "title_template", Type: field.TypeString, Nullable: true},
+		{Name: "tags", Type: field.TypeJSON, Nullable: true},
+		{Name: "add_chapters", Type: field.TypeBool, Default: true},
+		{Name: "notify_subscribers", Type: field.TypeBool, Default: false},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "channel_youtube_config", Type: field.TypeUUID, Unique: true},
+	}
+	// YoutubeConfigsTable holds the schema information for the "youtube_configs" table.
+	YoutubeConfigsTable = &schema.Table{
+		Name:       "youtube_configs",
+		Columns:    YoutubeConfigsColumns,
+		PrimaryKey: []*schema.Column{YoutubeConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "youtube_configs_channels_youtube_config",
+				Columns:    []*schema.Column{YoutubeConfigsColumns[11]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// YoutubeCredentialsColumns holds the columns for the "youtube_credentials" table.
+	YoutubeCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "access_token", Type: field.TypeString},
+		{Name: "refresh_token", Type: field.TypeString},
+		{Name: "token_type", Type: field.TypeString, Default: "Bearer"},
+		{Name: "expiry", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// YoutubeCredentialsTable holds the schema information for the "youtube_credentials" table.
+	YoutubeCredentialsTable = &schema.Table{
+		Name:       "youtube_credentials",
+		Columns:    YoutubeCredentialsColumns,
+		PrimaryKey: []*schema.Column{YoutubeCredentialsColumns[0]},
+	}
+	// YoutubePlaylistMappingsColumns holds the columns for the "youtube_playlist_mappings" table.
+	YoutubePlaylistMappingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "game_category", Type: field.TypeString},
+		{Name: "playlist_id", Type: field.TypeString},
+		{Name: "playlist_name", Type: field.TypeString, Nullable: true},
+		{Name: "priority", Type: field.TypeInt, Default: 0},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "youtube_config_playlist_mappings", Type: field.TypeUUID},
+	}
+	// YoutubePlaylistMappingsTable holds the schema information for the "youtube_playlist_mappings" table.
+	YoutubePlaylistMappingsTable = &schema.Table{
+		Name:       "youtube_playlist_mappings",
+		Columns:    YoutubePlaylistMappingsColumns,
+		PrimaryKey: []*schema.Column{YoutubePlaylistMappingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "youtube_playlist_mappings_youtube_configs_playlist_mappings",
+				Columns:    []*schema.Column{YoutubePlaylistMappingsColumns[7]},
+				RefColumns: []*schema.Column{YoutubeConfigsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// YoutubeUploadsColumns holds the columns for the "youtube_uploads" table.
+	YoutubeUploadsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "youtube_video_id", Type: field.TypeString, Nullable: true},
+		{Name: "youtube_url", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "error_message", Type: field.TypeString, Nullable: true},
+		{Name: "retry_count", Type: field.TypeInt, Default: 0},
+		{Name: "uploaded_at", Type: field.TypeTime, Nullable: true},
+		{Name: "playlist_ids", Type: field.TypeJSON, Nullable: true},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "vod_youtube_upload", Type: field.TypeUUID, Unique: true},
+	}
+	// YoutubeUploadsTable holds the schema information for the "youtube_uploads" table.
+	YoutubeUploadsTable = &schema.Table{
+		Name:       "youtube_uploads",
+		Columns:    YoutubeUploadsColumns,
+		PrimaryKey: []*schema.Column{YoutubeUploadsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "youtube_uploads_vods_youtube_upload",
+				Columns:    []*schema.Column{YoutubeUploadsColumns[10]},
+				RefColumns: []*schema.Column{VodsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// PlaylistVodsColumns holds the columns for the "playlist_vods" table.
 	PlaylistVodsColumns = []*schema.Column{
 		{Name: "playlist_id", Type: field.TypeUUID},
@@ -470,6 +568,10 @@ var (
 		TwitchCategoriesTable,
 		UsersTable,
 		VodsTable,
+		YoutubeConfigsTable,
+		YoutubeCredentialsTable,
+		YoutubePlaylistMappingsTable,
+		YoutubeUploadsTable,
 		PlaylistVodsTable,
 	}
 )
@@ -486,6 +588,9 @@ func init() {
 	PlaylistRuleGroupsTable.ForeignKeys[0].RefTable = PlaylistsTable
 	QueuesTable.ForeignKeys[0].RefTable = VodsTable
 	VodsTable.ForeignKeys[0].RefTable = ChannelsTable
+	YoutubeConfigsTable.ForeignKeys[0].RefTable = ChannelsTable
+	YoutubePlaylistMappingsTable.ForeignKeys[0].RefTable = YoutubeConfigsTable
+	YoutubeUploadsTable.ForeignKeys[0].RefTable = VodsTable
 	PlaylistVodsTable.ForeignKeys[0].RefTable = PlaylistsTable
 	PlaylistVodsTable.ForeignKeys[1].RefTable = VodsTable
 }

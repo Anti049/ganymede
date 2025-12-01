@@ -224,9 +224,24 @@ func (w ImportCategoriesWorker) Work(ctx context.Context, job *river.Job[ImportC
 
 	// upsert categories
 	for _, category := range categories {
-		err = store.Client.TwitchCategory.Create().SetID(category.ID).SetName(category.Name).OnConflictColumns(entTwitchCategory.FieldID).UpdateNewValues().Exec(context.Background())
+		// Check if category exists
+		exists, err := store.Client.TwitchCategory.Query().Where(entTwitchCategory.ID(category.ID)).Exist(context.Background())
 		if err != nil {
-			return fmt.Errorf("failed to upsert twitch category: %v", err)
+			return fmt.Errorf("failed to check twitch category existence: %v", err)
+		}
+		
+		if exists {
+			// Update existing category
+			err = store.Client.TwitchCategory.UpdateOneID(category.ID).SetName(category.Name).Exec(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to update twitch category: %v", err)
+			}
+		} else {
+			// Create new category
+			err = store.Client.TwitchCategory.Create().SetID(category.ID).SetName(category.Name).Exec(context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to create twitch category: %v", err)
+			}
 		}
 	}
 

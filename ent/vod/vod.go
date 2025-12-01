@@ -115,6 +115,8 @@ const (
 	EdgeMutedSegments = "muted_segments"
 	// EdgeMultistreamInfo holds the string denoting the multistream_info edge name in mutations.
 	EdgeMultistreamInfo = "multistream_info"
+	// EdgeYoutubeUpload holds the string denoting the youtube_upload edge name in mutations.
+	EdgeYoutubeUpload = "youtube_upload"
 	// Table holds the table name of the vod in the database.
 	Table = "vods"
 	// ChannelTable is the table that holds the channel relation/edge.
@@ -157,6 +159,13 @@ const (
 	MultistreamInfoInverseTable = "multistream_infos"
 	// MultistreamInfoColumn is the table column denoting the multistream_info relation/edge.
 	MultistreamInfoColumn = "multistream_info_vod"
+	// YoutubeUploadTable is the table that holds the youtube_upload relation/edge.
+	YoutubeUploadTable = "youtube_uploads"
+	// YoutubeUploadInverseTable is the table name for the YoutubeUpload entity.
+	// It exists in this package in order to avoid circular dependency with the "youtubeupload" package.
+	YoutubeUploadInverseTable = "youtube_uploads"
+	// YoutubeUploadColumn is the table column denoting the youtube_upload relation/edge.
+	YoutubeUploadColumn = "vod_youtube_upload"
 )
 
 // Columns holds all SQL columns for vod fields.
@@ -572,6 +581,13 @@ func ByMultistreamInfo(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMultistreamInfoStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByYoutubeUploadField orders the results by youtube_upload field.
+func ByYoutubeUploadField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newYoutubeUploadStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newChannelStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -612,5 +628,12 @@ func newMultistreamInfoStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MultistreamInfoInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, MultistreamInfoTable, MultistreamInfoColumn),
+	)
+}
+func newYoutubeUploadStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(YoutubeUploadInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, YoutubeUploadTable, YoutubeUploadColumn),
 	)
 }

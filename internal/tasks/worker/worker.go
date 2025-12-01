@@ -128,6 +128,9 @@ func NewRiverWorker(input RiverWorkerInput) (*RiverWorkerClient, error) {
 	if err := river.AddWorkerSafely(workers, &tasks_periodic.ProcessPlaylistVideoRulesWorker{}); err != nil {
 		return rc, err
 	}
+	if err := river.AddWorkerSafely(workers, &tasks.UploadToYouTubeWorker{}); err != nil {
+		return rc, err
+	}
 
 	rc.Ctx = context.Background()
 

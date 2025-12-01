@@ -33,6 +33,10 @@ import (
 	"github.com/zibbp/ganymede/ent/twitchcategory"
 	"github.com/zibbp/ganymede/ent/user"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
+	"github.com/zibbp/ganymede/ent/youtubecredential"
+	"github.com/zibbp/ganymede/ent/youtubeplaylistmapping"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 )
 
 // Client is the client that holds all ent builders.
@@ -74,6 +78,14 @@ type Client struct {
 	User *UserClient
 	// Vod is the client for interacting with the Vod builders.
 	Vod *VodClient
+	// YoutubeConfig is the client for interacting with the YoutubeConfig builders.
+	YoutubeConfig *YoutubeConfigClient
+	// YoutubeCredential is the client for interacting with the YoutubeCredential builders.
+	YoutubeCredential *YoutubeCredentialClient
+	// YoutubePlaylistMapping is the client for interacting with the YoutubePlaylistMapping builders.
+	YoutubePlaylistMapping *YoutubePlaylistMappingClient
+	// YoutubeUpload is the client for interacting with the YoutubeUpload builders.
+	YoutubeUpload *YoutubeUploadClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -102,6 +114,10 @@ func (c *Client) init() {
 	c.TwitchCategory = NewTwitchCategoryClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.Vod = NewVodClient(c.config)
+	c.YoutubeConfig = NewYoutubeConfigClient(c.config)
+	c.YoutubeCredential = NewYoutubeCredentialClient(c.config)
+	c.YoutubePlaylistMapping = NewYoutubePlaylistMappingClient(c.config)
+	c.YoutubeUpload = NewYoutubeUploadClient(c.config)
 }
 
 type (
@@ -192,25 +208,29 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:               ctx,
-		config:            cfg,
-		BlockedVideos:     NewBlockedVideosClient(cfg),
-		Channel:           NewChannelClient(cfg),
-		Chapter:           NewChapterClient(cfg),
-		Live:              NewLiveClient(cfg),
-		LiveCategory:      NewLiveCategoryClient(cfg),
-		LiveTitleRegex:    NewLiveTitleRegexClient(cfg),
-		MultistreamInfo:   NewMultistreamInfoClient(cfg),
-		MutedSegment:      NewMutedSegmentClient(cfg),
-		Playback:          NewPlaybackClient(cfg),
-		Playlist:          NewPlaylistClient(cfg),
-		PlaylistRule:      NewPlaylistRuleClient(cfg),
-		PlaylistRuleGroup: NewPlaylistRuleGroupClient(cfg),
-		Queue:             NewQueueClient(cfg),
-		Sessions:          NewSessionsClient(cfg),
-		TwitchCategory:    NewTwitchCategoryClient(cfg),
-		User:              NewUserClient(cfg),
-		Vod:               NewVodClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		BlockedVideos:          NewBlockedVideosClient(cfg),
+		Channel:                NewChannelClient(cfg),
+		Chapter:                NewChapterClient(cfg),
+		Live:                   NewLiveClient(cfg),
+		LiveCategory:           NewLiveCategoryClient(cfg),
+		LiveTitleRegex:         NewLiveTitleRegexClient(cfg),
+		MultistreamInfo:        NewMultistreamInfoClient(cfg),
+		MutedSegment:           NewMutedSegmentClient(cfg),
+		Playback:               NewPlaybackClient(cfg),
+		Playlist:               NewPlaylistClient(cfg),
+		PlaylistRule:           NewPlaylistRuleClient(cfg),
+		PlaylistRuleGroup:      NewPlaylistRuleGroupClient(cfg),
+		Queue:                  NewQueueClient(cfg),
+		Sessions:               NewSessionsClient(cfg),
+		TwitchCategory:         NewTwitchCategoryClient(cfg),
+		User:                   NewUserClient(cfg),
+		Vod:                    NewVodClient(cfg),
+		YoutubeConfig:          NewYoutubeConfigClient(cfg),
+		YoutubeCredential:      NewYoutubeCredentialClient(cfg),
+		YoutubePlaylistMapping: NewYoutubePlaylistMappingClient(cfg),
+		YoutubeUpload:          NewYoutubeUploadClient(cfg),
 	}, nil
 }
 
@@ -228,25 +248,29 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:               ctx,
-		config:            cfg,
-		BlockedVideos:     NewBlockedVideosClient(cfg),
-		Channel:           NewChannelClient(cfg),
-		Chapter:           NewChapterClient(cfg),
-		Live:              NewLiveClient(cfg),
-		LiveCategory:      NewLiveCategoryClient(cfg),
-		LiveTitleRegex:    NewLiveTitleRegexClient(cfg),
-		MultistreamInfo:   NewMultistreamInfoClient(cfg),
-		MutedSegment:      NewMutedSegmentClient(cfg),
-		Playback:          NewPlaybackClient(cfg),
-		Playlist:          NewPlaylistClient(cfg),
-		PlaylistRule:      NewPlaylistRuleClient(cfg),
-		PlaylistRuleGroup: NewPlaylistRuleGroupClient(cfg),
-		Queue:             NewQueueClient(cfg),
-		Sessions:          NewSessionsClient(cfg),
-		TwitchCategory:    NewTwitchCategoryClient(cfg),
-		User:              NewUserClient(cfg),
-		Vod:               NewVodClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		BlockedVideos:          NewBlockedVideosClient(cfg),
+		Channel:                NewChannelClient(cfg),
+		Chapter:                NewChapterClient(cfg),
+		Live:                   NewLiveClient(cfg),
+		LiveCategory:           NewLiveCategoryClient(cfg),
+		LiveTitleRegex:         NewLiveTitleRegexClient(cfg),
+		MultistreamInfo:        NewMultistreamInfoClient(cfg),
+		MutedSegment:           NewMutedSegmentClient(cfg),
+		Playback:               NewPlaybackClient(cfg),
+		Playlist:               NewPlaylistClient(cfg),
+		PlaylistRule:           NewPlaylistRuleClient(cfg),
+		PlaylistRuleGroup:      NewPlaylistRuleGroupClient(cfg),
+		Queue:                  NewQueueClient(cfg),
+		Sessions:               NewSessionsClient(cfg),
+		TwitchCategory:         NewTwitchCategoryClient(cfg),
+		User:                   NewUserClient(cfg),
+		Vod:                    NewVodClient(cfg),
+		YoutubeConfig:          NewYoutubeConfigClient(cfg),
+		YoutubeCredential:      NewYoutubeCredentialClient(cfg),
+		YoutubePlaylistMapping: NewYoutubePlaylistMappingClient(cfg),
+		YoutubeUpload:          NewYoutubeUploadClient(cfg),
 	}, nil
 }
 
@@ -279,6 +303,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BlockedVideos, c.Channel, c.Chapter, c.Live, c.LiveCategory, c.LiveTitleRegex,
 		c.MultistreamInfo, c.MutedSegment, c.Playback, c.Playlist, c.PlaylistRule,
 		c.PlaylistRuleGroup, c.Queue, c.Sessions, c.TwitchCategory, c.User, c.Vod,
+		c.YoutubeConfig, c.YoutubeCredential, c.YoutubePlaylistMapping,
+		c.YoutubeUpload,
 	} {
 		n.Use(hooks...)
 	}
@@ -291,6 +317,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BlockedVideos, c.Channel, c.Chapter, c.Live, c.LiveCategory, c.LiveTitleRegex,
 		c.MultistreamInfo, c.MutedSegment, c.Playback, c.Playlist, c.PlaylistRule,
 		c.PlaylistRuleGroup, c.Queue, c.Sessions, c.TwitchCategory, c.User, c.Vod,
+		c.YoutubeConfig, c.YoutubeCredential, c.YoutubePlaylistMapping,
+		c.YoutubeUpload,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -333,6 +361,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	case *VodMutation:
 		return c.Vod.mutate(ctx, m)
+	case *YoutubeConfigMutation:
+		return c.YoutubeConfig.mutate(ctx, m)
+	case *YoutubeCredentialMutation:
+		return c.YoutubeCredential.mutate(ctx, m)
+	case *YoutubePlaylistMappingMutation:
+		return c.YoutubePlaylistMapping.mutate(ctx, m)
+	case *YoutubeUploadMutation:
+		return c.YoutubeUpload.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -604,6 +640,22 @@ func (c *ChannelClient) QueryLive(_m *Channel) *LiveQuery {
 			sqlgraph.From(channel.Table, channel.FieldID, id),
 			sqlgraph.To(live.Table, live.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, channel.LiveTable, channel.LiveColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryYoutubeConfig queries the youtube_config edge of a Channel.
+func (c *ChannelClient) QueryYoutubeConfig(_m *Channel) *YoutubeConfigQuery {
+	query := (&YoutubeConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(youtubeconfig.Table, youtubeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, channel.YoutubeConfigTable, channel.YoutubeConfigColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -2958,6 +3010,22 @@ func (c *VodClient) QueryMultistreamInfo(_m *Vod) *MultistreamInfoQuery {
 	return query
 }
 
+// QueryYoutubeUpload queries the youtube_upload edge of a Vod.
+func (c *VodClient) QueryYoutubeUpload(_m *Vod) *YoutubeUploadQuery {
+	query := (&YoutubeUploadClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vod.Table, vod.FieldID, id),
+			sqlgraph.To(youtubeupload.Table, youtubeupload.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, vod.YoutubeUploadTable, vod.YoutubeUploadColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *VodClient) Hooks() []Hook {
 	return c.hooks.Vod
@@ -2983,16 +3051,614 @@ func (c *VodClient) mutate(ctx context.Context, m *VodMutation) (Value, error) {
 	}
 }
 
+// YoutubeConfigClient is a client for the YoutubeConfig schema.
+type YoutubeConfigClient struct {
+	config
+}
+
+// NewYoutubeConfigClient returns a client for the YoutubeConfig from the given config.
+func NewYoutubeConfigClient(c config) *YoutubeConfigClient {
+	return &YoutubeConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `youtubeconfig.Hooks(f(g(h())))`.
+func (c *YoutubeConfigClient) Use(hooks ...Hook) {
+	c.hooks.YoutubeConfig = append(c.hooks.YoutubeConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `youtubeconfig.Intercept(f(g(h())))`.
+func (c *YoutubeConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.YoutubeConfig = append(c.inters.YoutubeConfig, interceptors...)
+}
+
+// Create returns a builder for creating a YoutubeConfig entity.
+func (c *YoutubeConfigClient) Create() *YoutubeConfigCreate {
+	mutation := newYoutubeConfigMutation(c.config, OpCreate)
+	return &YoutubeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of YoutubeConfig entities.
+func (c *YoutubeConfigClient) CreateBulk(builders ...*YoutubeConfigCreate) *YoutubeConfigCreateBulk {
+	return &YoutubeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *YoutubeConfigClient) MapCreateBulk(slice any, setFunc func(*YoutubeConfigCreate, int)) *YoutubeConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &YoutubeConfigCreateBulk{err: fmt.Errorf("calling to YoutubeConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*YoutubeConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &YoutubeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for YoutubeConfig.
+func (c *YoutubeConfigClient) Update() *YoutubeConfigUpdate {
+	mutation := newYoutubeConfigMutation(c.config, OpUpdate)
+	return &YoutubeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *YoutubeConfigClient) UpdateOne(_m *YoutubeConfig) *YoutubeConfigUpdateOne {
+	mutation := newYoutubeConfigMutation(c.config, OpUpdateOne, withYoutubeConfig(_m))
+	return &YoutubeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *YoutubeConfigClient) UpdateOneID(id uuid.UUID) *YoutubeConfigUpdateOne {
+	mutation := newYoutubeConfigMutation(c.config, OpUpdateOne, withYoutubeConfigID(id))
+	return &YoutubeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for YoutubeConfig.
+func (c *YoutubeConfigClient) Delete() *YoutubeConfigDelete {
+	mutation := newYoutubeConfigMutation(c.config, OpDelete)
+	return &YoutubeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *YoutubeConfigClient) DeleteOne(_m *YoutubeConfig) *YoutubeConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *YoutubeConfigClient) DeleteOneID(id uuid.UUID) *YoutubeConfigDeleteOne {
+	builder := c.Delete().Where(youtubeconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &YoutubeConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for YoutubeConfig.
+func (c *YoutubeConfigClient) Query() *YoutubeConfigQuery {
+	return &YoutubeConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeYoutubeConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a YoutubeConfig entity by its id.
+func (c *YoutubeConfigClient) Get(ctx context.Context, id uuid.UUID) (*YoutubeConfig, error) {
+	return c.Query().Where(youtubeconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *YoutubeConfigClient) GetX(ctx context.Context, id uuid.UUID) *YoutubeConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a YoutubeConfig.
+func (c *YoutubeConfigClient) QueryChannel(_m *YoutubeConfig) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(youtubeconfig.Table, youtubeconfig.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, youtubeconfig.ChannelTable, youtubeconfig.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPlaylistMappings queries the playlist_mappings edge of a YoutubeConfig.
+func (c *YoutubeConfigClient) QueryPlaylistMappings(_m *YoutubeConfig) *YoutubePlaylistMappingQuery {
+	query := (&YoutubePlaylistMappingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(youtubeconfig.Table, youtubeconfig.FieldID, id),
+			sqlgraph.To(youtubeplaylistmapping.Table, youtubeplaylistmapping.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, youtubeconfig.PlaylistMappingsTable, youtubeconfig.PlaylistMappingsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *YoutubeConfigClient) Hooks() []Hook {
+	return c.hooks.YoutubeConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *YoutubeConfigClient) Interceptors() []Interceptor {
+	return c.inters.YoutubeConfig
+}
+
+func (c *YoutubeConfigClient) mutate(ctx context.Context, m *YoutubeConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&YoutubeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&YoutubeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&YoutubeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&YoutubeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown YoutubeConfig mutation op: %q", m.Op())
+	}
+}
+
+// YoutubeCredentialClient is a client for the YoutubeCredential schema.
+type YoutubeCredentialClient struct {
+	config
+}
+
+// NewYoutubeCredentialClient returns a client for the YoutubeCredential from the given config.
+func NewYoutubeCredentialClient(c config) *YoutubeCredentialClient {
+	return &YoutubeCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `youtubecredential.Hooks(f(g(h())))`.
+func (c *YoutubeCredentialClient) Use(hooks ...Hook) {
+	c.hooks.YoutubeCredential = append(c.hooks.YoutubeCredential, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `youtubecredential.Intercept(f(g(h())))`.
+func (c *YoutubeCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.YoutubeCredential = append(c.inters.YoutubeCredential, interceptors...)
+}
+
+// Create returns a builder for creating a YoutubeCredential entity.
+func (c *YoutubeCredentialClient) Create() *YoutubeCredentialCreate {
+	mutation := newYoutubeCredentialMutation(c.config, OpCreate)
+	return &YoutubeCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of YoutubeCredential entities.
+func (c *YoutubeCredentialClient) CreateBulk(builders ...*YoutubeCredentialCreate) *YoutubeCredentialCreateBulk {
+	return &YoutubeCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *YoutubeCredentialClient) MapCreateBulk(slice any, setFunc func(*YoutubeCredentialCreate, int)) *YoutubeCredentialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &YoutubeCredentialCreateBulk{err: fmt.Errorf("calling to YoutubeCredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*YoutubeCredentialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &YoutubeCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for YoutubeCredential.
+func (c *YoutubeCredentialClient) Update() *YoutubeCredentialUpdate {
+	mutation := newYoutubeCredentialMutation(c.config, OpUpdate)
+	return &YoutubeCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *YoutubeCredentialClient) UpdateOne(_m *YoutubeCredential) *YoutubeCredentialUpdateOne {
+	mutation := newYoutubeCredentialMutation(c.config, OpUpdateOne, withYoutubeCredential(_m))
+	return &YoutubeCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *YoutubeCredentialClient) UpdateOneID(id uuid.UUID) *YoutubeCredentialUpdateOne {
+	mutation := newYoutubeCredentialMutation(c.config, OpUpdateOne, withYoutubeCredentialID(id))
+	return &YoutubeCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for YoutubeCredential.
+func (c *YoutubeCredentialClient) Delete() *YoutubeCredentialDelete {
+	mutation := newYoutubeCredentialMutation(c.config, OpDelete)
+	return &YoutubeCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *YoutubeCredentialClient) DeleteOne(_m *YoutubeCredential) *YoutubeCredentialDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *YoutubeCredentialClient) DeleteOneID(id uuid.UUID) *YoutubeCredentialDeleteOne {
+	builder := c.Delete().Where(youtubecredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &YoutubeCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for YoutubeCredential.
+func (c *YoutubeCredentialClient) Query() *YoutubeCredentialQuery {
+	return &YoutubeCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeYoutubeCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a YoutubeCredential entity by its id.
+func (c *YoutubeCredentialClient) Get(ctx context.Context, id uuid.UUID) (*YoutubeCredential, error) {
+	return c.Query().Where(youtubecredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *YoutubeCredentialClient) GetX(ctx context.Context, id uuid.UUID) *YoutubeCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *YoutubeCredentialClient) Hooks() []Hook {
+	return c.hooks.YoutubeCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *YoutubeCredentialClient) Interceptors() []Interceptor {
+	return c.inters.YoutubeCredential
+}
+
+func (c *YoutubeCredentialClient) mutate(ctx context.Context, m *YoutubeCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&YoutubeCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&YoutubeCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&YoutubeCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&YoutubeCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown YoutubeCredential mutation op: %q", m.Op())
+	}
+}
+
+// YoutubePlaylistMappingClient is a client for the YoutubePlaylistMapping schema.
+type YoutubePlaylistMappingClient struct {
+	config
+}
+
+// NewYoutubePlaylistMappingClient returns a client for the YoutubePlaylistMapping from the given config.
+func NewYoutubePlaylistMappingClient(c config) *YoutubePlaylistMappingClient {
+	return &YoutubePlaylistMappingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `youtubeplaylistmapping.Hooks(f(g(h())))`.
+func (c *YoutubePlaylistMappingClient) Use(hooks ...Hook) {
+	c.hooks.YoutubePlaylistMapping = append(c.hooks.YoutubePlaylistMapping, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `youtubeplaylistmapping.Intercept(f(g(h())))`.
+func (c *YoutubePlaylistMappingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.YoutubePlaylistMapping = append(c.inters.YoutubePlaylistMapping, interceptors...)
+}
+
+// Create returns a builder for creating a YoutubePlaylistMapping entity.
+func (c *YoutubePlaylistMappingClient) Create() *YoutubePlaylistMappingCreate {
+	mutation := newYoutubePlaylistMappingMutation(c.config, OpCreate)
+	return &YoutubePlaylistMappingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of YoutubePlaylistMapping entities.
+func (c *YoutubePlaylistMappingClient) CreateBulk(builders ...*YoutubePlaylistMappingCreate) *YoutubePlaylistMappingCreateBulk {
+	return &YoutubePlaylistMappingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *YoutubePlaylistMappingClient) MapCreateBulk(slice any, setFunc func(*YoutubePlaylistMappingCreate, int)) *YoutubePlaylistMappingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &YoutubePlaylistMappingCreateBulk{err: fmt.Errorf("calling to YoutubePlaylistMappingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*YoutubePlaylistMappingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &YoutubePlaylistMappingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for YoutubePlaylistMapping.
+func (c *YoutubePlaylistMappingClient) Update() *YoutubePlaylistMappingUpdate {
+	mutation := newYoutubePlaylistMappingMutation(c.config, OpUpdate)
+	return &YoutubePlaylistMappingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *YoutubePlaylistMappingClient) UpdateOne(_m *YoutubePlaylistMapping) *YoutubePlaylistMappingUpdateOne {
+	mutation := newYoutubePlaylistMappingMutation(c.config, OpUpdateOne, withYoutubePlaylistMapping(_m))
+	return &YoutubePlaylistMappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *YoutubePlaylistMappingClient) UpdateOneID(id uuid.UUID) *YoutubePlaylistMappingUpdateOne {
+	mutation := newYoutubePlaylistMappingMutation(c.config, OpUpdateOne, withYoutubePlaylistMappingID(id))
+	return &YoutubePlaylistMappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for YoutubePlaylistMapping.
+func (c *YoutubePlaylistMappingClient) Delete() *YoutubePlaylistMappingDelete {
+	mutation := newYoutubePlaylistMappingMutation(c.config, OpDelete)
+	return &YoutubePlaylistMappingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *YoutubePlaylistMappingClient) DeleteOne(_m *YoutubePlaylistMapping) *YoutubePlaylistMappingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *YoutubePlaylistMappingClient) DeleteOneID(id uuid.UUID) *YoutubePlaylistMappingDeleteOne {
+	builder := c.Delete().Where(youtubeplaylistmapping.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &YoutubePlaylistMappingDeleteOne{builder}
+}
+
+// Query returns a query builder for YoutubePlaylistMapping.
+func (c *YoutubePlaylistMappingClient) Query() *YoutubePlaylistMappingQuery {
+	return &YoutubePlaylistMappingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeYoutubePlaylistMapping},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a YoutubePlaylistMapping entity by its id.
+func (c *YoutubePlaylistMappingClient) Get(ctx context.Context, id uuid.UUID) (*YoutubePlaylistMapping, error) {
+	return c.Query().Where(youtubeplaylistmapping.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *YoutubePlaylistMappingClient) GetX(ctx context.Context, id uuid.UUID) *YoutubePlaylistMapping {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryYoutubeConfig queries the youtube_config edge of a YoutubePlaylistMapping.
+func (c *YoutubePlaylistMappingClient) QueryYoutubeConfig(_m *YoutubePlaylistMapping) *YoutubeConfigQuery {
+	query := (&YoutubeConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(youtubeplaylistmapping.Table, youtubeplaylistmapping.FieldID, id),
+			sqlgraph.To(youtubeconfig.Table, youtubeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, youtubeplaylistmapping.YoutubeConfigTable, youtubeplaylistmapping.YoutubeConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *YoutubePlaylistMappingClient) Hooks() []Hook {
+	return c.hooks.YoutubePlaylistMapping
+}
+
+// Interceptors returns the client interceptors.
+func (c *YoutubePlaylistMappingClient) Interceptors() []Interceptor {
+	return c.inters.YoutubePlaylistMapping
+}
+
+func (c *YoutubePlaylistMappingClient) mutate(ctx context.Context, m *YoutubePlaylistMappingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&YoutubePlaylistMappingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&YoutubePlaylistMappingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&YoutubePlaylistMappingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&YoutubePlaylistMappingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown YoutubePlaylistMapping mutation op: %q", m.Op())
+	}
+}
+
+// YoutubeUploadClient is a client for the YoutubeUpload schema.
+type YoutubeUploadClient struct {
+	config
+}
+
+// NewYoutubeUploadClient returns a client for the YoutubeUpload from the given config.
+func NewYoutubeUploadClient(c config) *YoutubeUploadClient {
+	return &YoutubeUploadClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `youtubeupload.Hooks(f(g(h())))`.
+func (c *YoutubeUploadClient) Use(hooks ...Hook) {
+	c.hooks.YoutubeUpload = append(c.hooks.YoutubeUpload, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `youtubeupload.Intercept(f(g(h())))`.
+func (c *YoutubeUploadClient) Intercept(interceptors ...Interceptor) {
+	c.inters.YoutubeUpload = append(c.inters.YoutubeUpload, interceptors...)
+}
+
+// Create returns a builder for creating a YoutubeUpload entity.
+func (c *YoutubeUploadClient) Create() *YoutubeUploadCreate {
+	mutation := newYoutubeUploadMutation(c.config, OpCreate)
+	return &YoutubeUploadCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of YoutubeUpload entities.
+func (c *YoutubeUploadClient) CreateBulk(builders ...*YoutubeUploadCreate) *YoutubeUploadCreateBulk {
+	return &YoutubeUploadCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *YoutubeUploadClient) MapCreateBulk(slice any, setFunc func(*YoutubeUploadCreate, int)) *YoutubeUploadCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &YoutubeUploadCreateBulk{err: fmt.Errorf("calling to YoutubeUploadClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*YoutubeUploadCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &YoutubeUploadCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for YoutubeUpload.
+func (c *YoutubeUploadClient) Update() *YoutubeUploadUpdate {
+	mutation := newYoutubeUploadMutation(c.config, OpUpdate)
+	return &YoutubeUploadUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *YoutubeUploadClient) UpdateOne(_m *YoutubeUpload) *YoutubeUploadUpdateOne {
+	mutation := newYoutubeUploadMutation(c.config, OpUpdateOne, withYoutubeUpload(_m))
+	return &YoutubeUploadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *YoutubeUploadClient) UpdateOneID(id uuid.UUID) *YoutubeUploadUpdateOne {
+	mutation := newYoutubeUploadMutation(c.config, OpUpdateOne, withYoutubeUploadID(id))
+	return &YoutubeUploadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for YoutubeUpload.
+func (c *YoutubeUploadClient) Delete() *YoutubeUploadDelete {
+	mutation := newYoutubeUploadMutation(c.config, OpDelete)
+	return &YoutubeUploadDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *YoutubeUploadClient) DeleteOne(_m *YoutubeUpload) *YoutubeUploadDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *YoutubeUploadClient) DeleteOneID(id uuid.UUID) *YoutubeUploadDeleteOne {
+	builder := c.Delete().Where(youtubeupload.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &YoutubeUploadDeleteOne{builder}
+}
+
+// Query returns a query builder for YoutubeUpload.
+func (c *YoutubeUploadClient) Query() *YoutubeUploadQuery {
+	return &YoutubeUploadQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeYoutubeUpload},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a YoutubeUpload entity by its id.
+func (c *YoutubeUploadClient) Get(ctx context.Context, id uuid.UUID) (*YoutubeUpload, error) {
+	return c.Query().Where(youtubeupload.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *YoutubeUploadClient) GetX(ctx context.Context, id uuid.UUID) *YoutubeUpload {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVod queries the vod edge of a YoutubeUpload.
+func (c *YoutubeUploadClient) QueryVod(_m *YoutubeUpload) *VodQuery {
+	query := (&VodClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(youtubeupload.Table, youtubeupload.FieldID, id),
+			sqlgraph.To(vod.Table, vod.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, youtubeupload.VodTable, youtubeupload.VodColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *YoutubeUploadClient) Hooks() []Hook {
+	return c.hooks.YoutubeUpload
+}
+
+// Interceptors returns the client interceptors.
+func (c *YoutubeUploadClient) Interceptors() []Interceptor {
+	return c.inters.YoutubeUpload
+}
+
+func (c *YoutubeUploadClient) mutate(ctx context.Context, m *YoutubeUploadMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&YoutubeUploadCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&YoutubeUploadUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&YoutubeUploadUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&YoutubeUploadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown YoutubeUpload mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
 		BlockedVideos, Channel, Chapter, Live, LiveCategory, LiveTitleRegex,
 		MultistreamInfo, MutedSegment, Playback, Playlist, PlaylistRule,
-		PlaylistRuleGroup, Queue, Sessions, TwitchCategory, User, Vod []ent.Hook
+		PlaylistRuleGroup, Queue, Sessions, TwitchCategory, User, Vod, YoutubeConfig,
+		YoutubeCredential, YoutubePlaylistMapping, YoutubeUpload []ent.Hook
 	}
 	inters struct {
 		BlockedVideos, Channel, Chapter, Live, LiveCategory, LiveTitleRegex,
 		MultistreamInfo, MutedSegment, Playback, Playlist, PlaylistRule,
-		PlaylistRuleGroup, Queue, Sessions, TwitchCategory, User, Vod []ent.Interceptor
+		PlaylistRuleGroup, Queue, Sessions, TwitchCategory, User, Vod, YoutubeConfig,
+		YoutubeCredential, YoutubePlaylistMapping, YoutubeUpload []ent.Interceptor
 	}
 )

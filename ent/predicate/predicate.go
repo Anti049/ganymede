@@ -56,3 +56,15 @@ type User func(*sql.Selector)
 
 // Vod is the predicate function for vod builders.
 type Vod func(*sql.Selector)
+
+// YoutubeConfig is the predicate function for youtubeconfig builders.
+type YoutubeConfig func(*sql.Selector)
+
+// YoutubeCredential is the predicate function for youtubecredential builders.
+type YoutubeCredential func(*sql.Selector)
+
+// YoutubePlaylistMapping is the predicate function for youtubeplaylistmapping builders.
+type YoutubePlaylistMapping func(*sql.Selector)
+
+// YoutubeUpload is the predicate function for youtubeupload builders.
+type YoutubeUpload func(*sql.Selector)

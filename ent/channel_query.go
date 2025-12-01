@@ -17,17 +17,19 @@ import (
 	"github.com/zibbp/ganymede/ent/live"
 	"github.com/zibbp/ganymede/ent/predicate"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
 )
 
 // ChannelQuery is the builder for querying Channel entities.
 type ChannelQuery struct {
 	config
-	ctx        *QueryContext
-	order      []channel.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Channel
-	withVods   *VodQuery
-	withLive   *LiveQuery
+	ctx               *QueryContext
+	order             []channel.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Channel
+	withVods          *VodQuery
+	withLive          *LiveQuery
+	withYoutubeConfig *YoutubeConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *ChannelQuery) QueryLive() *LiveQuery {
 			sqlgraph.From(channel.Table, channel.FieldID, selector),
 			sqlgraph.To(live.Table, live.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, channel.LiveTable, channel.LiveColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryYoutubeConfig chains the current query on the "youtube_config" edge.
+func (_q *ChannelQuery) QueryYoutubeConfig() *YoutubeConfigQuery {
+	query := (&YoutubeConfigClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, selector),
+			sqlgraph.To(youtubeconfig.Table, youtubeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, channel.YoutubeConfigTable, channel.YoutubeConfigColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *ChannelQuery) Clone() *ChannelQuery {
 		return nil
 	}
 	return &ChannelQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]channel.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Channel{}, _q.predicates...),
-		withVods:   _q.withVods.Clone(),
-		withLive:   _q.withLive.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]channel.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.Channel{}, _q.predicates...),
+		withVods:          _q.withVods.Clone(),
+		withLive:          _q.withLive.Clone(),
+		withYoutubeConfig: _q.withYoutubeConfig.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +352,17 @@ func (_q *ChannelQuery) WithLive(opts ...func(*LiveQuery)) *ChannelQuery {
 		opt(query)
 	}
 	_q.withLive = query
+	return _q
+}
+
+// WithYoutubeConfig tells the query-builder to eager-load the nodes that are connected to
+// the "youtube_config" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ChannelQuery) WithYoutubeConfig(opts ...func(*YoutubeConfigQuery)) *ChannelQuery {
+	query := (&YoutubeConfigClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withYoutubeConfig = query
 	return _q
 }
 
@@ -408,9 +444,10 @@ func (_q *ChannelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chan
 	var (
 		nodes       = []*Channel{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withVods != nil,
 			_q.withLive != nil,
+			_q.withYoutubeConfig != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -442,6 +479,12 @@ func (_q *ChannelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chan
 		if err := _q.loadLive(ctx, query, nodes,
 			func(n *Channel) { n.Edges.Live = []*Live{} },
 			func(n *Channel, e *Live) { n.Edges.Live = append(n.Edges.Live, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withYoutubeConfig; query != nil {
+		if err := _q.loadYoutubeConfig(ctx, query, nodes, nil,
+			func(n *Channel, e *YoutubeConfig) { n.Edges.YoutubeConfig = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -505,6 +548,34 @@ func (_q *ChannelQuery) loadLive(ctx context.Context, query *LiveQuery, nodes []
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "channel_live" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ChannelQuery) loadYoutubeConfig(ctx context.Context, query *YoutubeConfigQuery, nodes []*Channel, init func(*Channel), assign func(*Channel, *YoutubeConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Channel)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.YoutubeConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(channel.YoutubeConfigColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.channel_youtube_config
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "channel_youtube_config" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "channel_youtube_config" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

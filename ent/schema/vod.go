@@ -74,5 +74,6 @@ func (Vod) Edges() []ent.Edge {
 		edge.To("chapters", Chapter.Type),
 		edge.To("muted_segments", MutedSegment.Type),
 		edge.From("multistream_info", MultistreamInfo.Type).Ref("vod"),
+		edge.To("youtube_upload", YoutubeUpload.Type).Unique(),
 	}
 }

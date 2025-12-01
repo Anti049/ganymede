@@ -21,6 +21,7 @@ import (
 	"github.com/zibbp/ganymede/ent/predicate"
 	"github.com/zibbp/ganymede/ent/queue"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 )
 
 // VodQuery is the builder for querying Vod entities.
@@ -36,6 +37,7 @@ type VodQuery struct {
 	withChapters        *ChapterQuery
 	withMutedSegments   *MutedSegmentQuery
 	withMultistreamInfo *MultistreamInfoQuery
+	withYoutubeUpload   *YoutubeUploadQuery
 	withFKs             bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -198,6 +200,28 @@ func (_q *VodQuery) QueryMultistreamInfo() *MultistreamInfoQuery {
 			sqlgraph.From(vod.Table, vod.FieldID, selector),
 			sqlgraph.To(multistreaminfo.Table, multistreaminfo.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, vod.MultistreamInfoTable, vod.MultistreamInfoColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryYoutubeUpload chains the current query on the "youtube_upload" edge.
+func (_q *VodQuery) QueryYoutubeUpload() *YoutubeUploadQuery {
+	query := (&YoutubeUploadClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vod.Table, vod.FieldID, selector),
+			sqlgraph.To(youtubeupload.Table, youtubeupload.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, vod.YoutubeUploadTable, vod.YoutubeUploadColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -403,6 +427,7 @@ func (_q *VodQuery) Clone() *VodQuery {
 		withChapters:        _q.withChapters.Clone(),
 		withMutedSegments:   _q.withMutedSegments.Clone(),
 		withMultistreamInfo: _q.withMultistreamInfo.Clone(),
+		withYoutubeUpload:   _q.withYoutubeUpload.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -472,6 +497,17 @@ func (_q *VodQuery) WithMultistreamInfo(opts ...func(*MultistreamInfoQuery)) *Vo
 		opt(query)
 	}
 	_q.withMultistreamInfo = query
+	return _q
+}
+
+// WithYoutubeUpload tells the query-builder to eager-load the nodes that are connected to
+// the "youtube_upload" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *VodQuery) WithYoutubeUpload(opts ...func(*YoutubeUploadQuery)) *VodQuery {
+	query := (&YoutubeUploadClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withYoutubeUpload = query
 	return _q
 }
 
@@ -554,13 +590,14 @@ func (_q *VodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Vod, err
 		nodes       = []*Vod{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withChannel != nil,
 			_q.withQueue != nil,
 			_q.withPlaylists != nil,
 			_q.withChapters != nil,
 			_q.withMutedSegments != nil,
 			_q.withMultistreamInfo != nil,
+			_q.withYoutubeUpload != nil,
 		}
 	)
 	if _q.withChannel != nil {
@@ -624,6 +661,12 @@ func (_q *VodQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Vod, err
 		if err := _q.loadMultistreamInfo(ctx, query, nodes,
 			func(n *Vod) { n.Edges.MultistreamInfo = []*MultistreamInfo{} },
 			func(n *Vod, e *MultistreamInfo) { n.Edges.MultistreamInfo = append(n.Edges.MultistreamInfo, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withYoutubeUpload; query != nil {
+		if err := _q.loadYoutubeUpload(ctx, query, nodes, nil,
+			func(n *Vod, e *YoutubeUpload) { n.Edges.YoutubeUpload = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -839,6 +882,34 @@ func (_q *VodQuery) loadMultistreamInfo(ctx context.Context, query *MultistreamI
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "multistream_info_vod" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *VodQuery) loadYoutubeUpload(ctx context.Context, query *YoutubeUploadQuery, nodes []*Vod, init func(*Vod), assign func(*Vod, *YoutubeUpload)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Vod)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.YoutubeUpload(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(vod.YoutubeUploadColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.vod_youtube_upload
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "vod_youtube_upload" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "vod_youtube_upload" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -46,6 +46,14 @@ type Tx struct {
 	User *UserClient
 	// Vod is the client for interacting with the Vod builders.
 	Vod *VodClient
+	// YoutubeConfig is the client for interacting with the YoutubeConfig builders.
+	YoutubeConfig *YoutubeConfigClient
+	// YoutubeCredential is the client for interacting with the YoutubeCredential builders.
+	YoutubeCredential *YoutubeCredentialClient
+	// YoutubePlaylistMapping is the client for interacting with the YoutubePlaylistMapping builders.
+	YoutubePlaylistMapping *YoutubePlaylistMappingClient
+	// YoutubeUpload is the client for interacting with the YoutubeUpload builders.
+	YoutubeUpload *YoutubeUploadClient
 
 	// lazily loaded.
 	client     *Client
@@ -194,6 +202,10 @@ func (tx *Tx) init() {
 	tx.TwitchCategory = NewTwitchCategoryClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.Vod = NewVodClient(tx.config)
+	tx.YoutubeConfig = NewYoutubeConfigClient(tx.config)
+	tx.YoutubeCredential = NewYoutubeCredentialClient(tx.config)
+	tx.YoutubePlaylistMapping = NewYoutubePlaylistMappingClient(tx.config)
+	tx.YoutubeUpload = NewYoutubeUploadClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

@@ -35,5 +35,6 @@ func (Channel) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("vods", Vod.Type),
 		edge.To("live", Live.Type),
+		edge.To("youtube_config", YoutubeConfig.Type).Unique(),
 	}
 }

@@ -23,6 +23,10 @@ import (
 	"github.com/zibbp/ganymede/ent/twitchcategory"
 	"github.com/zibbp/ganymede/ent/user"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
+	"github.com/zibbp/ganymede/ent/youtubecredential"
+	"github.com/zibbp/ganymede/ent/youtubeplaylistmapping"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -383,4 +387,104 @@ func init() {
 	vodDescID := vodFields[0].Descriptor()
 	// vod.DefaultID holds the default value on creation for the id field.
 	vod.DefaultID = vodDescID.Default.(func() uuid.UUID)
+	youtubeconfigFields := schema.YoutubeConfig{}.Fields()
+	_ = youtubeconfigFields
+	// youtubeconfigDescUploadEnabled is the schema descriptor for upload_enabled field.
+	youtubeconfigDescUploadEnabled := youtubeconfigFields[1].Descriptor()
+	// youtubeconfig.DefaultUploadEnabled holds the default value on creation for the upload_enabled field.
+	youtubeconfig.DefaultUploadEnabled = youtubeconfigDescUploadEnabled.Default.(bool)
+	// youtubeconfigDescDefaultPrivacy is the schema descriptor for default_privacy field.
+	youtubeconfigDescDefaultPrivacy := youtubeconfigFields[2].Descriptor()
+	// youtubeconfig.DefaultDefaultPrivacy holds the default value on creation for the default_privacy field.
+	youtubeconfig.DefaultDefaultPrivacy = youtubeconfigDescDefaultPrivacy.Default.(string)
+	// youtubeconfigDescDefaultCategoryID is the schema descriptor for default_category_id field.
+	youtubeconfigDescDefaultCategoryID := youtubeconfigFields[3].Descriptor()
+	// youtubeconfig.DefaultDefaultCategoryID holds the default value on creation for the default_category_id field.
+	youtubeconfig.DefaultDefaultCategoryID = youtubeconfigDescDefaultCategoryID.Default.(string)
+	// youtubeconfigDescAddChapters is the schema descriptor for add_chapters field.
+	youtubeconfigDescAddChapters := youtubeconfigFields[7].Descriptor()
+	// youtubeconfig.DefaultAddChapters holds the default value on creation for the add_chapters field.
+	youtubeconfig.DefaultAddChapters = youtubeconfigDescAddChapters.Default.(bool)
+	// youtubeconfigDescNotifySubscribers is the schema descriptor for notify_subscribers field.
+	youtubeconfigDescNotifySubscribers := youtubeconfigFields[8].Descriptor()
+	// youtubeconfig.DefaultNotifySubscribers holds the default value on creation for the notify_subscribers field.
+	youtubeconfig.DefaultNotifySubscribers = youtubeconfigDescNotifySubscribers.Default.(bool)
+	// youtubeconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	youtubeconfigDescUpdatedAt := youtubeconfigFields[9].Descriptor()
+	// youtubeconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	youtubeconfig.DefaultUpdatedAt = youtubeconfigDescUpdatedAt.Default.(func() time.Time)
+	// youtubeconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	youtubeconfig.UpdateDefaultUpdatedAt = youtubeconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// youtubeconfigDescCreatedAt is the schema descriptor for created_at field.
+	youtubeconfigDescCreatedAt := youtubeconfigFields[10].Descriptor()
+	// youtubeconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	youtubeconfig.DefaultCreatedAt = youtubeconfigDescCreatedAt.Default.(func() time.Time)
+	// youtubeconfigDescID is the schema descriptor for id field.
+	youtubeconfigDescID := youtubeconfigFields[0].Descriptor()
+	// youtubeconfig.DefaultID holds the default value on creation for the id field.
+	youtubeconfig.DefaultID = youtubeconfigDescID.Default.(func() uuid.UUID)
+	youtubecredentialFields := schema.YoutubeCredential{}.Fields()
+	_ = youtubecredentialFields
+	// youtubecredentialDescTokenType is the schema descriptor for token_type field.
+	youtubecredentialDescTokenType := youtubecredentialFields[3].Descriptor()
+	// youtubecredential.DefaultTokenType holds the default value on creation for the token_type field.
+	youtubecredential.DefaultTokenType = youtubecredentialDescTokenType.Default.(string)
+	// youtubecredentialDescUpdatedAt is the schema descriptor for updated_at field.
+	youtubecredentialDescUpdatedAt := youtubecredentialFields[5].Descriptor()
+	// youtubecredential.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	youtubecredential.DefaultUpdatedAt = youtubecredentialDescUpdatedAt.Default.(func() time.Time)
+	// youtubecredential.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	youtubecredential.UpdateDefaultUpdatedAt = youtubecredentialDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// youtubecredentialDescCreatedAt is the schema descriptor for created_at field.
+	youtubecredentialDescCreatedAt := youtubecredentialFields[6].Descriptor()
+	// youtubecredential.DefaultCreatedAt holds the default value on creation for the created_at field.
+	youtubecredential.DefaultCreatedAt = youtubecredentialDescCreatedAt.Default.(func() time.Time)
+	// youtubecredentialDescID is the schema descriptor for id field.
+	youtubecredentialDescID := youtubecredentialFields[0].Descriptor()
+	// youtubecredential.DefaultID holds the default value on creation for the id field.
+	youtubecredential.DefaultID = youtubecredentialDescID.Default.(func() uuid.UUID)
+	youtubeplaylistmappingFields := schema.YoutubePlaylistMapping{}.Fields()
+	_ = youtubeplaylistmappingFields
+	// youtubeplaylistmappingDescPriority is the schema descriptor for priority field.
+	youtubeplaylistmappingDescPriority := youtubeplaylistmappingFields[4].Descriptor()
+	// youtubeplaylistmapping.DefaultPriority holds the default value on creation for the priority field.
+	youtubeplaylistmapping.DefaultPriority = youtubeplaylistmappingDescPriority.Default.(int)
+	// youtubeplaylistmappingDescUpdatedAt is the schema descriptor for updated_at field.
+	youtubeplaylistmappingDescUpdatedAt := youtubeplaylistmappingFields[5].Descriptor()
+	// youtubeplaylistmapping.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	youtubeplaylistmapping.DefaultUpdatedAt = youtubeplaylistmappingDescUpdatedAt.Default.(func() time.Time)
+	// youtubeplaylistmapping.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	youtubeplaylistmapping.UpdateDefaultUpdatedAt = youtubeplaylistmappingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// youtubeplaylistmappingDescCreatedAt is the schema descriptor for created_at field.
+	youtubeplaylistmappingDescCreatedAt := youtubeplaylistmappingFields[6].Descriptor()
+	// youtubeplaylistmapping.DefaultCreatedAt holds the default value on creation for the created_at field.
+	youtubeplaylistmapping.DefaultCreatedAt = youtubeplaylistmappingDescCreatedAt.Default.(func() time.Time)
+	// youtubeplaylistmappingDescID is the schema descriptor for id field.
+	youtubeplaylistmappingDescID := youtubeplaylistmappingFields[0].Descriptor()
+	// youtubeplaylistmapping.DefaultID holds the default value on creation for the id field.
+	youtubeplaylistmapping.DefaultID = youtubeplaylistmappingDescID.Default.(func() uuid.UUID)
+	youtubeuploadFields := schema.YoutubeUpload{}.Fields()
+	_ = youtubeuploadFields
+	// youtubeuploadDescStatus is the schema descriptor for status field.
+	youtubeuploadDescStatus := youtubeuploadFields[3].Descriptor()
+	// youtubeupload.DefaultStatus holds the default value on creation for the status field.
+	youtubeupload.DefaultStatus = youtubeuploadDescStatus.Default.(string)
+	// youtubeuploadDescRetryCount is the schema descriptor for retry_count field.
+	youtubeuploadDescRetryCount := youtubeuploadFields[5].Descriptor()
+	// youtubeupload.DefaultRetryCount holds the default value on creation for the retry_count field.
+	youtubeupload.DefaultRetryCount = youtubeuploadDescRetryCount.Default.(int)
+	// youtubeuploadDescUpdatedAt is the schema descriptor for updated_at field.
+	youtubeuploadDescUpdatedAt := youtubeuploadFields[8].Descriptor()
+	// youtubeupload.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	youtubeupload.DefaultUpdatedAt = youtubeuploadDescUpdatedAt.Default.(func() time.Time)
+	// youtubeupload.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	youtubeupload.UpdateDefaultUpdatedAt = youtubeuploadDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// youtubeuploadDescCreatedAt is the schema descriptor for created_at field.
+	youtubeuploadDescCreatedAt := youtubeuploadFields[9].Descriptor()
+	// youtubeupload.DefaultCreatedAt holds the default value on creation for the created_at field.
+	youtubeupload.DefaultCreatedAt = youtubeuploadDescCreatedAt.Default.(func() time.Time)
+	// youtubeuploadDescID is the schema descriptor for id field.
+	youtubeuploadDescID := youtubeuploadFields[0].Descriptor()
+	// youtubeupload.DefaultID holds the default value on creation for the id field.
+	youtubeupload.DefaultID = youtubeuploadDescID.Default.(func() uuid.UUID)
 }

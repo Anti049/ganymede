@@ -23,6 +23,10 @@ services:
       # - DB_SSL_ROOT_CERT= # path to cert in the container if DB_SSL is not disabled
       - TWITCH_CLIENT_ID= # from your twitch application
       - TWITCH_CLIENT_SECRET= # from your twitch application
+      # YouTube settings (optional - for automatic YouTube uploads)
+      # - YOUTUBE_CLIENT_ID= # from Google Cloud Console OAuth2 credentials
+      # - YOUTUBE_CLIENT_SECRET= # from Google Cloud Console OAuth2 credentials
+      # - YOUTUBE_REDIRECT_URL=http://IP:PORT/api/v1/youtube/callback # Points to the API service
       # Worker settings. Max number of tasks to run in parallel per type.
       - MAX_CHAT_DOWNLOAD_EXECUTIONS=3
       - MAX_CHAT_RENDER_EXECUTIONS=2

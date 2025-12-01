@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -21,7 +19,6 @@ type MutedSegmentCreate struct {
 	config
 	mutation *MutedSegmentMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetStart sets the "start" field.
@@ -144,7 +141,6 @@ func (_c *MutedSegmentCreate) createSpec() (*MutedSegment, *sqlgraph.CreateSpec)
 		_node = &MutedSegment{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(mutedsegment.Table, sqlgraph.NewFieldSpec(mutedsegment.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -177,225 +173,11 @@ func (_c *MutedSegmentCreate) createSpec() (*MutedSegment, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.MutedSegment.Create().
-//		SetStart(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.MutedSegmentUpsert) {
-//			SetStart(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *MutedSegmentCreate) OnConflict(opts ...sql.ConflictOption) *MutedSegmentUpsertOne {
-	_c.conflict = opts
-	return &MutedSegmentUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *MutedSegmentCreate) OnConflictColumns(columns ...string) *MutedSegmentUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &MutedSegmentUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// MutedSegmentUpsertOne is the builder for "upsert"-ing
-	//  one MutedSegment node.
-	MutedSegmentUpsertOne struct {
-		create *MutedSegmentCreate
-	}
-
-	// MutedSegmentUpsert is the "OnConflict" setter.
-	MutedSegmentUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetStart sets the "start" field.
-func (u *MutedSegmentUpsert) SetStart(v int) *MutedSegmentUpsert {
-	u.Set(mutedsegment.FieldStart, v)
-	return u
-}
-
-// UpdateStart sets the "start" field to the value that was provided on create.
-func (u *MutedSegmentUpsert) UpdateStart() *MutedSegmentUpsert {
-	u.SetExcluded(mutedsegment.FieldStart)
-	return u
-}
-
-// AddStart adds v to the "start" field.
-func (u *MutedSegmentUpsert) AddStart(v int) *MutedSegmentUpsert {
-	u.Add(mutedsegment.FieldStart, v)
-	return u
-}
-
-// SetEnd sets the "end" field.
-func (u *MutedSegmentUpsert) SetEnd(v int) *MutedSegmentUpsert {
-	u.Set(mutedsegment.FieldEnd, v)
-	return u
-}
-
-// UpdateEnd sets the "end" field to the value that was provided on create.
-func (u *MutedSegmentUpsert) UpdateEnd() *MutedSegmentUpsert {
-	u.SetExcluded(mutedsegment.FieldEnd)
-	return u
-}
-
-// AddEnd adds v to the "end" field.
-func (u *MutedSegmentUpsert) AddEnd(v int) *MutedSegmentUpsert {
-	u.Add(mutedsegment.FieldEnd, v)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(mutedsegment.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *MutedSegmentUpsertOne) UpdateNewValues() *MutedSegmentUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(mutedsegment.FieldID)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *MutedSegmentUpsertOne) Ignore() *MutedSegmentUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *MutedSegmentUpsertOne) DoNothing() *MutedSegmentUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the MutedSegmentCreate.OnConflict
-// documentation for more info.
-func (u *MutedSegmentUpsertOne) Update(set func(*MutedSegmentUpsert)) *MutedSegmentUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&MutedSegmentUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetStart sets the "start" field.
-func (u *MutedSegmentUpsertOne) SetStart(v int) *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.SetStart(v)
-	})
-}
-
-// AddStart adds v to the "start" field.
-func (u *MutedSegmentUpsertOne) AddStart(v int) *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.AddStart(v)
-	})
-}
-
-// UpdateStart sets the "start" field to the value that was provided on create.
-func (u *MutedSegmentUpsertOne) UpdateStart() *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.UpdateStart()
-	})
-}
-
-// SetEnd sets the "end" field.
-func (u *MutedSegmentUpsertOne) SetEnd(v int) *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.SetEnd(v)
-	})
-}
-
-// AddEnd adds v to the "end" field.
-func (u *MutedSegmentUpsertOne) AddEnd(v int) *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.AddEnd(v)
-	})
-}
-
-// UpdateEnd sets the "end" field to the value that was provided on create.
-func (u *MutedSegmentUpsertOne) UpdateEnd() *MutedSegmentUpsertOne {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.UpdateEnd()
-	})
-}
-
-// Exec executes the query.
-func (u *MutedSegmentUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for MutedSegmentCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *MutedSegmentUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *MutedSegmentUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: MutedSegmentUpsertOne.ID is not supported by MySQL driver. Use MutedSegmentUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *MutedSegmentUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // MutedSegmentCreateBulk is the builder for creating many MutedSegment entities in bulk.
 type MutedSegmentCreateBulk struct {
 	config
 	err      error
 	builders []*MutedSegmentCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the MutedSegment entities in the database.
@@ -425,7 +207,6 @@ func (_c *MutedSegmentCreateBulk) Save(ctx context.Context) ([]*MutedSegment, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -472,162 +253,6 @@ func (_c *MutedSegmentCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *MutedSegmentCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.MutedSegment.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.MutedSegmentUpsert) {
-//			SetStart(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *MutedSegmentCreateBulk) OnConflict(opts ...sql.ConflictOption) *MutedSegmentUpsertBulk {
-	_c.conflict = opts
-	return &MutedSegmentUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *MutedSegmentCreateBulk) OnConflictColumns(columns ...string) *MutedSegmentUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &MutedSegmentUpsertBulk{
-		create: _c,
-	}
-}
-
-// MutedSegmentUpsertBulk is the builder for "upsert"-ing
-// a bulk of MutedSegment nodes.
-type MutedSegmentUpsertBulk struct {
-	create *MutedSegmentCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(mutedsegment.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *MutedSegmentUpsertBulk) UpdateNewValues() *MutedSegmentUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(mutedsegment.FieldID)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.MutedSegment.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *MutedSegmentUpsertBulk) Ignore() *MutedSegmentUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *MutedSegmentUpsertBulk) DoNothing() *MutedSegmentUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the MutedSegmentCreateBulk.OnConflict
-// documentation for more info.
-func (u *MutedSegmentUpsertBulk) Update(set func(*MutedSegmentUpsert)) *MutedSegmentUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&MutedSegmentUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetStart sets the "start" field.
-func (u *MutedSegmentUpsertBulk) SetStart(v int) *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.SetStart(v)
-	})
-}
-
-// AddStart adds v to the "start" field.
-func (u *MutedSegmentUpsertBulk) AddStart(v int) *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.AddStart(v)
-	})
-}
-
-// UpdateStart sets the "start" field to the value that was provided on create.
-func (u *MutedSegmentUpsertBulk) UpdateStart() *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.UpdateStart()
-	})
-}
-
-// SetEnd sets the "end" field.
-func (u *MutedSegmentUpsertBulk) SetEnd(v int) *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.SetEnd(v)
-	})
-}
-
-// AddEnd adds v to the "end" field.
-func (u *MutedSegmentUpsertBulk) AddEnd(v int) *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.AddEnd(v)
-	})
-}
-
-// UpdateEnd sets the "end" field to the value that was provided on create.
-func (u *MutedSegmentUpsertBulk) UpdateEnd() *MutedSegmentUpsertBulk {
-	return u.Update(func(s *MutedSegmentUpsert) {
-		s.UpdateEnd()
-	})
-}
-
-// Exec executes the query.
-func (u *MutedSegmentUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the MutedSegmentCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for MutedSegmentCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *MutedSegmentUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

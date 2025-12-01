@@ -2835,6 +2835,29 @@ func HasMultistreamInfoWith(preds ...predicate.MultistreamInfo) predicate.Vod {
 	})
 }
 
+// HasYoutubeUpload applies the HasEdge predicate on the "youtube_upload" edge.
+func HasYoutubeUpload() predicate.Vod {
+	return predicate.Vod(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, YoutubeUploadTable, YoutubeUploadColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasYoutubeUploadWith applies the HasEdge predicate on the "youtube_upload" edge with a given conditions (other predicates).
+func HasYoutubeUploadWith(preds ...predicate.YoutubeUpload) predicate.Vod {
+	return predicate.Vod(func(s *sql.Selector) {
+		step := newYoutubeUploadStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Vod) predicate.Vod {
 	return predicate.Vod(sql.AndPredicates(predicates...))

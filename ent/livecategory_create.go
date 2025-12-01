@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -21,7 +19,6 @@ type LiveCategoryCreate struct {
 	config
 	mutation *LiveCategoryMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -140,7 +137,6 @@ func (_c *LiveCategoryCreate) createSpec() (*LiveCategory, *sqlgraph.CreateSpec)
 		_node = &LiveCategory{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(livecategory.Table, sqlgraph.NewFieldSpec(livecategory.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -169,186 +165,11 @@ func (_c *LiveCategoryCreate) createSpec() (*LiveCategory, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.LiveCategory.Create().
-//		SetName(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.LiveCategoryUpsert) {
-//			SetName(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *LiveCategoryCreate) OnConflict(opts ...sql.ConflictOption) *LiveCategoryUpsertOne {
-	_c.conflict = opts
-	return &LiveCategoryUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *LiveCategoryCreate) OnConflictColumns(columns ...string) *LiveCategoryUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &LiveCategoryUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// LiveCategoryUpsertOne is the builder for "upsert"-ing
-	//  one LiveCategory node.
-	LiveCategoryUpsertOne struct {
-		create *LiveCategoryCreate
-	}
-
-	// LiveCategoryUpsert is the "OnConflict" setter.
-	LiveCategoryUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetName sets the "name" field.
-func (u *LiveCategoryUpsert) SetName(v string) *LiveCategoryUpsert {
-	u.Set(livecategory.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *LiveCategoryUpsert) UpdateName() *LiveCategoryUpsert {
-	u.SetExcluded(livecategory.FieldName)
-	return u
-}
-
-// ClearName clears the value of the "name" field.
-func (u *LiveCategoryUpsert) ClearName() *LiveCategoryUpsert {
-	u.SetNull(livecategory.FieldName)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(livecategory.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *LiveCategoryUpsertOne) UpdateNewValues() *LiveCategoryUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(livecategory.FieldID)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *LiveCategoryUpsertOne) Ignore() *LiveCategoryUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *LiveCategoryUpsertOne) DoNothing() *LiveCategoryUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the LiveCategoryCreate.OnConflict
-// documentation for more info.
-func (u *LiveCategoryUpsertOne) Update(set func(*LiveCategoryUpsert)) *LiveCategoryUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&LiveCategoryUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetName sets the "name" field.
-func (u *LiveCategoryUpsertOne) SetName(v string) *LiveCategoryUpsertOne {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *LiveCategoryUpsertOne) UpdateName() *LiveCategoryUpsertOne {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.UpdateName()
-	})
-}
-
-// ClearName clears the value of the "name" field.
-func (u *LiveCategoryUpsertOne) ClearName() *LiveCategoryUpsertOne {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.ClearName()
-	})
-}
-
-// Exec executes the query.
-func (u *LiveCategoryUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for LiveCategoryCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *LiveCategoryUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *LiveCategoryUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: LiveCategoryUpsertOne.ID is not supported by MySQL driver. Use LiveCategoryUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *LiveCategoryUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // LiveCategoryCreateBulk is the builder for creating many LiveCategory entities in bulk.
 type LiveCategoryCreateBulk struct {
 	config
 	err      error
 	builders []*LiveCategoryCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the LiveCategory entities in the database.
@@ -378,7 +199,6 @@ func (_c *LiveCategoryCreateBulk) Save(ctx context.Context) ([]*LiveCategory, er
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -425,141 +245,6 @@ func (_c *LiveCategoryCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *LiveCategoryCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.LiveCategory.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.LiveCategoryUpsert) {
-//			SetName(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *LiveCategoryCreateBulk) OnConflict(opts ...sql.ConflictOption) *LiveCategoryUpsertBulk {
-	_c.conflict = opts
-	return &LiveCategoryUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *LiveCategoryCreateBulk) OnConflictColumns(columns ...string) *LiveCategoryUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &LiveCategoryUpsertBulk{
-		create: _c,
-	}
-}
-
-// LiveCategoryUpsertBulk is the builder for "upsert"-ing
-// a bulk of LiveCategory nodes.
-type LiveCategoryUpsertBulk struct {
-	create *LiveCategoryCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(livecategory.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *LiveCategoryUpsertBulk) UpdateNewValues() *LiveCategoryUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(livecategory.FieldID)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.LiveCategory.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *LiveCategoryUpsertBulk) Ignore() *LiveCategoryUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *LiveCategoryUpsertBulk) DoNothing() *LiveCategoryUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the LiveCategoryCreateBulk.OnConflict
-// documentation for more info.
-func (u *LiveCategoryUpsertBulk) Update(set func(*LiveCategoryUpsert)) *LiveCategoryUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&LiveCategoryUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetName sets the "name" field.
-func (u *LiveCategoryUpsertBulk) SetName(v string) *LiveCategoryUpsertBulk {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *LiveCategoryUpsertBulk) UpdateName() *LiveCategoryUpsertBulk {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.UpdateName()
-	})
-}
-
-// ClearName clears the value of the "name" field.
-func (u *LiveCategoryUpsertBulk) ClearName() *LiveCategoryUpsertBulk {
-	return u.Update(func(s *LiveCategoryUpsert) {
-		s.ClearName()
-	})
-}
-
-// Exec executes the query.
-func (u *LiveCategoryUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the LiveCategoryCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for LiveCategoryCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *LiveCategoryUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

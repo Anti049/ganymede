@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -22,7 +20,6 @@ type PlaylistRuleGroupCreate struct {
 	config
 	mutation *PlaylistRuleGroupMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetOperator sets the "operator" field.
@@ -189,7 +186,6 @@ func (_c *PlaylistRuleGroupCreate) createSpec() (*PlaylistRuleGroup, *sqlgraph.C
 		_node = &PlaylistRuleGroup{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(playlistrulegroup.Table, sqlgraph.NewFieldSpec(playlistrulegroup.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -238,212 +234,11 @@ func (_c *PlaylistRuleGroupCreate) createSpec() (*PlaylistRuleGroup, *sqlgraph.C
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.PlaylistRuleGroup.Create().
-//		SetOperator(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.PlaylistRuleGroupUpsert) {
-//			SetOperator(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *PlaylistRuleGroupCreate) OnConflict(opts ...sql.ConflictOption) *PlaylistRuleGroupUpsertOne {
-	_c.conflict = opts
-	return &PlaylistRuleGroupUpsertOne{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *PlaylistRuleGroupCreate) OnConflictColumns(columns ...string) *PlaylistRuleGroupUpsertOne {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &PlaylistRuleGroupUpsertOne{
-		create: _c,
-	}
-}
-
-type (
-	// PlaylistRuleGroupUpsertOne is the builder for "upsert"-ing
-	//  one PlaylistRuleGroup node.
-	PlaylistRuleGroupUpsertOne struct {
-		create *PlaylistRuleGroupCreate
-	}
-
-	// PlaylistRuleGroupUpsert is the "OnConflict" setter.
-	PlaylistRuleGroupUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetOperator sets the "operator" field.
-func (u *PlaylistRuleGroupUpsert) SetOperator(v playlistrulegroup.Operator) *PlaylistRuleGroupUpsert {
-	u.Set(playlistrulegroup.FieldOperator, v)
-	return u
-}
-
-// UpdateOperator sets the "operator" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsert) UpdateOperator() *PlaylistRuleGroupUpsert {
-	u.SetExcluded(playlistrulegroup.FieldOperator)
-	return u
-}
-
-// SetPosition sets the "position" field.
-func (u *PlaylistRuleGroupUpsert) SetPosition(v int) *PlaylistRuleGroupUpsert {
-	u.Set(playlistrulegroup.FieldPosition, v)
-	return u
-}
-
-// UpdatePosition sets the "position" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsert) UpdatePosition() *PlaylistRuleGroupUpsert {
-	u.SetExcluded(playlistrulegroup.FieldPosition)
-	return u
-}
-
-// AddPosition adds v to the "position" field.
-func (u *PlaylistRuleGroupUpsert) AddPosition(v int) *PlaylistRuleGroupUpsert {
-	u.Add(playlistrulegroup.FieldPosition, v)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(playlistrulegroup.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *PlaylistRuleGroupUpsertOne) UpdateNewValues() *PlaylistRuleGroupUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(playlistrulegroup.FieldID)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *PlaylistRuleGroupUpsertOne) Ignore() *PlaylistRuleGroupUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *PlaylistRuleGroupUpsertOne) DoNothing() *PlaylistRuleGroupUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the PlaylistRuleGroupCreate.OnConflict
-// documentation for more info.
-func (u *PlaylistRuleGroupUpsertOne) Update(set func(*PlaylistRuleGroupUpsert)) *PlaylistRuleGroupUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&PlaylistRuleGroupUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetOperator sets the "operator" field.
-func (u *PlaylistRuleGroupUpsertOne) SetOperator(v playlistrulegroup.Operator) *PlaylistRuleGroupUpsertOne {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.SetOperator(v)
-	})
-}
-
-// UpdateOperator sets the "operator" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsertOne) UpdateOperator() *PlaylistRuleGroupUpsertOne {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.UpdateOperator()
-	})
-}
-
-// SetPosition sets the "position" field.
-func (u *PlaylistRuleGroupUpsertOne) SetPosition(v int) *PlaylistRuleGroupUpsertOne {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.SetPosition(v)
-	})
-}
-
-// AddPosition adds v to the "position" field.
-func (u *PlaylistRuleGroupUpsertOne) AddPosition(v int) *PlaylistRuleGroupUpsertOne {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.AddPosition(v)
-	})
-}
-
-// UpdatePosition sets the "position" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsertOne) UpdatePosition() *PlaylistRuleGroupUpsertOne {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.UpdatePosition()
-	})
-}
-
-// Exec executes the query.
-func (u *PlaylistRuleGroupUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for PlaylistRuleGroupCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *PlaylistRuleGroupUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *PlaylistRuleGroupUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("ent: PlaylistRuleGroupUpsertOne.ID is not supported by MySQL driver. Use PlaylistRuleGroupUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *PlaylistRuleGroupUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // PlaylistRuleGroupCreateBulk is the builder for creating many PlaylistRuleGroup entities in bulk.
 type PlaylistRuleGroupCreateBulk struct {
 	config
 	err      error
 	builders []*PlaylistRuleGroupCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the PlaylistRuleGroup entities in the database.
@@ -473,7 +268,6 @@ func (_c *PlaylistRuleGroupCreateBulk) Save(ctx context.Context) ([]*PlaylistRul
 					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -520,155 +314,6 @@ func (_c *PlaylistRuleGroupCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (_c *PlaylistRuleGroupCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.PlaylistRuleGroup.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.PlaylistRuleGroupUpsert) {
-//			SetOperator(v+v).
-//		}).
-//		Exec(ctx)
-func (_c *PlaylistRuleGroupCreateBulk) OnConflict(opts ...sql.ConflictOption) *PlaylistRuleGroupUpsertBulk {
-	_c.conflict = opts
-	return &PlaylistRuleGroupUpsertBulk{
-		create: _c,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (_c *PlaylistRuleGroupCreateBulk) OnConflictColumns(columns ...string) *PlaylistRuleGroupUpsertBulk {
-	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &PlaylistRuleGroupUpsertBulk{
-		create: _c,
-	}
-}
-
-// PlaylistRuleGroupUpsertBulk is the builder for "upsert"-ing
-// a bulk of PlaylistRuleGroup nodes.
-type PlaylistRuleGroupUpsertBulk struct {
-	create *PlaylistRuleGroupCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(playlistrulegroup.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *PlaylistRuleGroupUpsertBulk) UpdateNewValues() *PlaylistRuleGroupUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(playlistrulegroup.FieldID)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.PlaylistRuleGroup.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *PlaylistRuleGroupUpsertBulk) Ignore() *PlaylistRuleGroupUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *PlaylistRuleGroupUpsertBulk) DoNothing() *PlaylistRuleGroupUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the PlaylistRuleGroupCreateBulk.OnConflict
-// documentation for more info.
-func (u *PlaylistRuleGroupUpsertBulk) Update(set func(*PlaylistRuleGroupUpsert)) *PlaylistRuleGroupUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&PlaylistRuleGroupUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetOperator sets the "operator" field.
-func (u *PlaylistRuleGroupUpsertBulk) SetOperator(v playlistrulegroup.Operator) *PlaylistRuleGroupUpsertBulk {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.SetOperator(v)
-	})
-}
-
-// UpdateOperator sets the "operator" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsertBulk) UpdateOperator() *PlaylistRuleGroupUpsertBulk {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.UpdateOperator()
-	})
-}
-
-// SetPosition sets the "position" field.
-func (u *PlaylistRuleGroupUpsertBulk) SetPosition(v int) *PlaylistRuleGroupUpsertBulk {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.SetPosition(v)
-	})
-}
-
-// AddPosition adds v to the "position" field.
-func (u *PlaylistRuleGroupUpsertBulk) AddPosition(v int) *PlaylistRuleGroupUpsertBulk {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.AddPosition(v)
-	})
-}
-
-// UpdatePosition sets the "position" field to the value that was provided on create.
-func (u *PlaylistRuleGroupUpsertBulk) UpdatePosition() *PlaylistRuleGroupUpsertBulk {
-	return u.Update(func(s *PlaylistRuleGroupUpsert) {
-		s.UpdatePosition()
-	})
-}
-
-// Exec executes the query.
-func (u *PlaylistRuleGroupUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the PlaylistRuleGroupCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for PlaylistRuleGroupCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *PlaylistRuleGroupUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

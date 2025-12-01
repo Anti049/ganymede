@@ -29,6 +29,10 @@ import (
 	"github.com/zibbp/ganymede/ent/twitchcategory"
 	"github.com/zibbp/ganymede/ent/user"
 	"github.com/zibbp/ganymede/ent/vod"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
+	"github.com/zibbp/ganymede/ent/youtubecredential"
+	"github.com/zibbp/ganymede/ent/youtubeplaylistmapping"
+	"github.com/zibbp/ganymede/ent/youtubeupload"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -89,23 +93,27 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			blockedvideos.Table:     blockedvideos.ValidColumn,
-			channel.Table:           channel.ValidColumn,
-			chapter.Table:           chapter.ValidColumn,
-			live.Table:              live.ValidColumn,
-			livecategory.Table:      livecategory.ValidColumn,
-			livetitleregex.Table:    livetitleregex.ValidColumn,
-			multistreaminfo.Table:   multistreaminfo.ValidColumn,
-			mutedsegment.Table:      mutedsegment.ValidColumn,
-			playback.Table:          playback.ValidColumn,
-			playlist.Table:          playlist.ValidColumn,
-			playlistrule.Table:      playlistrule.ValidColumn,
-			playlistrulegroup.Table: playlistrulegroup.ValidColumn,
-			queue.Table:             queue.ValidColumn,
-			sessions.Table:          sessions.ValidColumn,
-			twitchcategory.Table:    twitchcategory.ValidColumn,
-			user.Table:              user.ValidColumn,
-			vod.Table:               vod.ValidColumn,
+			blockedvideos.Table:          blockedvideos.ValidColumn,
+			channel.Table:                channel.ValidColumn,
+			chapter.Table:                chapter.ValidColumn,
+			live.Table:                   live.ValidColumn,
+			livecategory.Table:           livecategory.ValidColumn,
+			livetitleregex.Table:         livetitleregex.ValidColumn,
+			multistreaminfo.Table:        multistreaminfo.ValidColumn,
+			mutedsegment.Table:           mutedsegment.ValidColumn,
+			playback.Table:               playback.ValidColumn,
+			playlist.Table:               playlist.ValidColumn,
+			playlistrule.Table:           playlistrule.ValidColumn,
+			playlistrulegroup.Table:      playlistrulegroup.ValidColumn,
+			queue.Table:                  queue.ValidColumn,
+			sessions.Table:               sessions.ValidColumn,
+			twitchcategory.Table:         twitchcategory.ValidColumn,
+			user.Table:                   user.ValidColumn,
+			vod.Table:                    vod.ValidColumn,
+			youtubeconfig.Table:          youtubeconfig.ValidColumn,
+			youtubecredential.Table:      youtubecredential.ValidColumn,
+			youtubeplaylistmapping.Table: youtubeplaylistmapping.ValidColumn,
+			youtubeupload.Table:          youtubeupload.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

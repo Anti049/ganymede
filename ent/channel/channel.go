@@ -37,6 +37,8 @@ const (
 	EdgeVods = "vods"
 	// EdgeLive holds the string denoting the live edge name in mutations.
 	EdgeLive = "live"
+	// EdgeYoutubeConfig holds the string denoting the youtube_config edge name in mutations.
+	EdgeYoutubeConfig = "youtube_config"
 	// Table holds the table name of the channel in the database.
 	Table = "channels"
 	// VodsTable is the table that holds the vods relation/edge.
@@ -53,6 +55,13 @@ const (
 	LiveInverseTable = "lives"
 	// LiveColumn is the table column denoting the live relation/edge.
 	LiveColumn = "channel_live"
+	// YoutubeConfigTable is the table that holds the youtube_config relation/edge.
+	YoutubeConfigTable = "youtube_configs"
+	// YoutubeConfigInverseTable is the table name for the YoutubeConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "youtubeconfig" package.
+	YoutubeConfigInverseTable = "youtube_configs"
+	// YoutubeConfigColumn is the table column denoting the youtube_config relation/edge.
+	YoutubeConfigColumn = "channel_youtube_config"
 )
 
 // Columns holds all SQL columns for channel fields.
@@ -174,6 +183,13 @@ func ByLive(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newLiveStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByYoutubeConfigField orders the results by youtube_config field.
+func ByYoutubeConfigField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newYoutubeConfigStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newVodsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -186,5 +202,12 @@ func newLiveStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(LiveInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, LiveTable, LiveColumn),
+	)
+}
+func newYoutubeConfigStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(YoutubeConfigInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, YoutubeConfigTable, YoutubeConfigColumn),
 	)
 }

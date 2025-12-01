@@ -43,6 +43,7 @@ type Services struct {
 	ChapterService      ChapterService
 	CategoryService     CategoryService
 	BlockedVideoService BlockedVideoService
+	YoutubeService      YoutubeService
 	PlatformTwitch      platform.Platform
 }
 
@@ -55,7 +56,7 @@ type Handler struct {
 
 var sessionManager *scs.SessionManager
 
-func NewHandler(database *database.Database, authService AuthService, channelService ChannelService, vodService VodService, queueService QueueService, archiveService ArchiveService, adminService AdminService, userService UserService, liveService LiveService, playbackService PlaybackService, metricsService MetricsService, playlistService PlaylistService, taskService TaskService, chapterService ChapterService, categoryService CategoryService, blockedVideoService BlockedVideoService, platformTwitch platform.Platform, riverUIServer *riverui.Handler) *Handler {
+func NewHandler(database *database.Database, authService AuthService, channelService ChannelService, vodService VodService, queueService QueueService, archiveService ArchiveService, adminService AdminService, userService UserService, liveService LiveService, playbackService PlaybackService, metricsService MetricsService, playlistService PlaylistService, taskService TaskService, chapterService ChapterService, categoryService CategoryService, blockedVideoService BlockedVideoService, youtubeService YoutubeService, platformTwitch platform.Platform, riverUIServer *riverui.Handler) *Handler {
 	log.Debug().Msg("creating route handler")
 	envConfig := config.GetEnvConfig()
 
@@ -84,6 +85,7 @@ func NewHandler(database *database.Database, authService AuthService, channelSer
 			ChapterService:      chapterService,
 			CategoryService:     categoryService,
 			BlockedVideoService: blockedVideoService,
+			YoutubeService:      youtubeService,
 			PlatformTwitch:      platformTwitch,
 		},
 		SessionManager: sessionManager,
@@ -322,6 +324,20 @@ func groupV1Routes(e *echo.Group, h *Handler) {
 	blockedGroup.POST("/:id", h.CreateBlockedVideo, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
 	blockedGroup.DELETE("/:id", h.DeleteBlockedVideo, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
 	blockedGroup.GET("/:id", h.IsVideoBlocked)
+
+	// YouTube
+	youtubeGroup := e.Group("/youtube")
+	youtubeGroup.GET("/auth/url", h.GetYoutubeAuthURL, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.AdminRole))
+	youtubeGroup.POST("/auth/callback", h.ExchangeYoutubeCode, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.AdminRole))
+	youtubeGroup.GET("/config/channel/:channelId", h.GetYoutubeConfig, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
+	youtubeGroup.POST("/config/channel/:channelId", h.CreateYoutubeConfig, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.AdminRole))
+	youtubeGroup.PUT("/config/:configId", h.UpdateYoutubeConfig, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.AdminRole))
+	youtubeGroup.DELETE("/config/:configId", h.DeleteYoutubeConfig, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.AdminRole))
+	youtubeGroup.POST("/config/:configId/mapping", h.CreatePlaylistMapping, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
+	youtubeGroup.PUT("/mapping/:mappingId", h.UpdatePlaylistMapping, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
+	youtubeGroup.DELETE("/mapping/:mappingId", h.DeletePlaylistMapping, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
+	youtubeGroup.GET("/upload/vod/:vodId", h.GetUploadStatus, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
+	youtubeGroup.POST("/upload/vod/:vodId/retry", h.RetryUpload, AuthGuardMiddleware, AuthGetUserMiddleware, AuthUserRoleMiddleware(utils.EditorRole))
 }
 
 func (h *Handler) Serve(ctx context.Context) error {

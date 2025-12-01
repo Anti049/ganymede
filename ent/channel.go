@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/zibbp/ganymede/ent/channel"
+	"github.com/zibbp/ganymede/ent/youtubeconfig"
 )
 
 // Channel is the model entity for the Channel schema.
@@ -48,9 +49,11 @@ type ChannelEdges struct {
 	Vods []*Vod `json:"vods,omitempty"`
 	// Live holds the value of the live edge.
 	Live []*Live `json:"live,omitempty"`
+	// YoutubeConfig holds the value of the youtube_config edge.
+	YoutubeConfig *YoutubeConfig `json:"youtube_config,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // VodsOrErr returns the Vods value or an error if the edge
@@ -69,6 +72,17 @@ func (e ChannelEdges) LiveOrErr() ([]*Live, error) {
 		return e.Live, nil
 	}
 	return nil, &NotLoadedError{edge: "live"}
+}
+
+// YoutubeConfigOrErr returns the YoutubeConfig value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ChannelEdges) YoutubeConfigOrErr() (*YoutubeConfig, error) {
+	if e.YoutubeConfig != nil {
+		return e.YoutubeConfig, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: youtubeconfig.Label}
+	}
+	return nil, &NotLoadedError{edge: "youtube_config"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -182,6 +196,11 @@ func (_m *Channel) QueryVods() *VodQuery {
 // QueryLive queries the "live" edge of the Channel entity.
 func (_m *Channel) QueryLive() *LiveQuery {
 	return NewChannelClient(_m.config).QueryLive(_m)
+}
+
+// QueryYoutubeConfig queries the "youtube_config" edge of the Channel entity.
+func (_m *Channel) QueryYoutubeConfig() *YoutubeConfigQuery {
+	return NewChannelClient(_m.config).QueryYoutubeConfig(_m)
 }
 
 // Update returns a builder for updating this Channel.

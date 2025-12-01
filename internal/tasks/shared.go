@@ -192,6 +192,19 @@ func checkIfTasksAreDone(ctx context.Context, entClient *ent.Client, input Archi
 			if err != nil {
 				log.Error().Err(err).Msg("error queuing video storage usage update task")
 			}
+
+			// Queue YouTube upload task if configured
+			youtubeConfig, err := dbItems.Channel.QueryYoutubeConfig().Only(ctx)
+			if err == nil && youtubeConfig.UploadEnabled {
+				_, err = river.ClientFromContext[pgx.Tx](ctx).Insert(ctx, &UploadToYouTubeArgs{
+					Input: input,
+				}, nil)
+				if err != nil {
+					log.Error().Err(err).Msg("error queuing YouTube upload task")
+				} else {
+					log.Info().Msg("queued YouTube upload task")
+				}
+			}
 		}
 	} else {
 		if dbItems.Queue.TaskVideoDownload == utils.Success && dbItems.Queue.TaskVideoConvert == utils.Success && dbItems.Queue.TaskVideoMove == utils.Success && dbItems.Queue.TaskChatDownload == utils.Success && dbItems.Queue.TaskChatRender == utils.Success && dbItems.Queue.TaskChatMove == utils.Success {
@@ -215,6 +228,19 @@ func checkIfTasksAreDone(ctx context.Context, entClient *ent.Client, input Archi
 			}, nil)
 			if err != nil {
 				log.Error().Err(err).Msg("error queuing video storage usage update task")
+			}
+
+			// Queue YouTube upload task if configured
+			youtubeConfig, err := dbItems.Channel.QueryYoutubeConfig().Only(ctx)
+			if err == nil && youtubeConfig.UploadEnabled {
+				_, err = river.ClientFromContext[pgx.Tx](ctx).Insert(ctx, &UploadToYouTubeArgs{
+					Input: input,
+				}, nil)
+				if err != nil {
+					log.Error().Err(err).Msg("error queuing YouTube upload task")
+				} else {
+					log.Info().Msg("queued YouTube upload task")
+				}
 			}
 		}
 	}
