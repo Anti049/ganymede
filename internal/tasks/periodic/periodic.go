@@ -229,7 +229,7 @@ func (w ImportCategoriesWorker) Work(ctx context.Context, job *river.Job[ImportC
 		if err != nil {
 			return fmt.Errorf("failed to check twitch category existence: %v", err)
 		}
-		
+
 		if exists {
 			// Update existing category
 			err = store.Client.TwitchCategory.UpdateOneID(category.ID).SetName(category.Name).Exec(context.Background())

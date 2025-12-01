@@ -491,13 +491,13 @@ func ExchangeCode(ctx context.Context, code string) (*oauth2.Token, error) {
 
 // ResumableUpload performs a resumable upload for large files
 type ResumableUpload struct {
-	Service      *youtube.Service
-	Video        *youtube.Video
-	FilePath     string
-	ChunkSize    int64
-	OnProgress   func(bytesUploaded, totalBytes int64)
-	OnComplete   func(videoID string)
-	OnError      func(err error)
+	Service    *youtube.Service
+	Video      *youtube.Video
+	FilePath   string
+	ChunkSize  int64
+	OnProgress func(bytesUploaded, totalBytes int64)
+	OnComplete func(videoID string)
+	OnError    func(err error)
 }
 
 func (r *ResumableUpload) Upload(ctx context.Context) error {

@@ -69,7 +69,7 @@ func processFileSecrets() {
 		if len(parts) != 2 {
 			continue
 		}
-		
+
 		envKeyFile := parts[0]
 		filePath := parts[1]
 
@@ -109,7 +109,7 @@ func processFileSecrets() {
 
 		targetKey := strings.TrimSuffix(envKeyFile, fileSuffix)
 		secretValue := strings.TrimSpace(string(content))
-		
+
 		if err := os.Setenv(targetKey, secretValue); err != nil {
 			log.Error().
 				Str("env_var", targetKey).
@@ -127,8 +127,8 @@ func processFileSecrets() {
 
 // GetEnvConfig returns the environment variables for the application
 func GetEnvConfig() EnvConfig {
-	processFileSecrets() 
-	
+	processFileSecrets()
+
 	ctx := context.Background()
 
 	var c EnvConfig
@@ -139,8 +139,8 @@ func GetEnvConfig() EnvConfig {
 }
 
 func GetEnvApplicationConfig() EnvApplicationConfig {
-	processFileSecrets() 
-	
+	processFileSecrets()
+
 	ctx := context.Background()
 
 	var c EnvApplicationConfig
